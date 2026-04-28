@@ -1,0 +1,46 @@
+<mxfile host="draw.io">
+  <diagram id="FR12" name="FR12 - User Notification">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="2" value="SmartTradeAI System" style="shape=rectangle;rounded=1;whiteSpace=wrap;html=1;fillColor=none;dashed=1;dashPattern=8 8;strokeColor=#6C8EBF;strokeWidth=2;fontSize=16;fontStyle=1;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="220" y="30" width="520" height="400" as="geometry"/>
+        </mxCell>
+        <mxCell id="3" value="Trader" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="60" y="140" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="4" value="Webhook&#xa;Service" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="870" y="80" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="10" value="Notify User on&#xa;Task Completion&#xa;(FR12-01)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="310" y="60" width="220" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="11" value="Send Notification&#xa;via Webhook" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="530" y="180" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="12" value="Display Notification&#xa;in UI Dashboard" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="280" y="220" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="13" value="Mark Task as&#xa;Completed" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="360" y="340" width="180" height="65" as="geometry"/>
+        </mxCell>
+        <mxCell id="20" style="endArrow=none;html=1;strokeWidth=1.5;" edge="1" source="3" target="10" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="21" style="endArrow=none;html=1;strokeWidth=1.5;" edge="1" source="4" target="11" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="30" value="&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;" style="html=1;dashed=1;dashPattern=8 8;endArrow=open;endSize=12;strokeColor=#9673A6;strokeWidth=1.5;fontColor=#9673A6;fontSize=11;" edge="1" source="11" target="10" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="31" value="&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;" style="html=1;dashed=1;dashPattern=8 8;endArrow=open;endSize=12;strokeColor=#9673A6;strokeWidth=1.5;fontColor=#9673A6;fontSize=11;" edge="1" source="12" target="10" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="32" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;" style="html=1;dashed=1;dashPattern=8 8;endArrow=open;endSize=12;strokeColor=#B85450;strokeWidth=1.5;fontColor=#B85450;fontSize=11;" edge="1" source="10" target="13" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

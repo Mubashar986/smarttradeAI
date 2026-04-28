@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" agent="Codex" version="24.7.17" type="device">
+  <diagram id="ai-trading-use-case" name="Use Case Diagram">
+    <mxGraphModel dx="2600" dy="1600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3000" pageHeight="1800" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="system" value="AI Trading Strategy System" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=top;spacingTop=12;fontStyle=1;strokeWidth=2;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="190" y="20" width="2240" height="1520" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="actor" value="User" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="50" y="500" width="70" height="130" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="fr01" value="FR01 Strategy Input" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="system">
+          <mxGeometry x="40" y="60" width="360" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="fr02" value="FR02 Task Management" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="system">
+          <mxGeometry x="560" y="60" width="360" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="fr03" value="FR03 Strategy Generation Agent" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="system">
+          <mxGeometry x="1080" y="60" width="360" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="fr04" value="FR04 Compilation &amp; Error Correction" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="system">
+          <mxGeometry x="1600" y="60" width="360" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="fr05" value="FR05 Backtesting Agent" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="system">
+          <mxGeometry x="40" y="180" width="360" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="fr06" value="FR06 Performance Metrics Extraction" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="system">
+          <mxGeometry x="560" y="180" width="360" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="fr07" value="FR07 Strategy Evaluation Agent" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="system">
+          <mxGeometry x="1080" y="180" width="360" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="fr08" value="FR08 Strategy Improvement Agent" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="system">
+          <mxGeometry x="1600" y="180" width="360" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="fr09" value="FR09 Iterative Optimization Loop" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="system">
+          <mxGeometry x="40" y="300" width="360" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="fr10" value="FR10 Strategy Explanation" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="system">
+          <mxGeometry x="560" y="300" width="360" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="fr11" value="FR11 Result Storage" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="system">
+          <mxGeometry x="1080" y="300" width="360" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="fr12" value="FR12 User Notification" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="system">
+          <mxGeometry x="1600" y="300" width="360" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="fr13" value="FR13 Results Visualization" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="system">
+          <mxGeometry x="40" y="420" width="360" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="fr14" value="FR14 User Feedback Loop" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="system">
+          <mxGeometry x="560" y="420" width="360" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="fr15" value="FR15 Risk Management" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="system">
+          <mxGeometry x="1080" y="420" width="360" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="fr16" value="FR16 Multi-User Scalability" style="ellipse;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="system">
+          <mxGeometry x="1600" y="420" width="360" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="note1" value="&lt;b&gt;FR01-FR04&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;FR01&lt;/b&gt;&lt;br&gt;FR01-01 Text input for natural-language trading constraints&lt;br&gt;FR01-02 Validate completeness and clarity&lt;br&gt;FR01-03 Example templates for common strategies&lt;br&gt;&lt;br&gt;&lt;b&gt;FR02&lt;/b&gt;&lt;br&gt;FR02-01 Queue tasks in Redis with unique IDs&lt;br&gt;FR02-02 Real-time task status updates&lt;br&gt;FR02-03 Task history for user reference&lt;br&gt;&lt;br&gt;&lt;b&gt;FR03&lt;/b&gt;&lt;br&gt;FR03-01 Generate MQL5 code via LLM API&lt;br&gt;FR03-02 Enforce predefined code structure&lt;br&gt;FR03-03 Store generated code with versioning&lt;br&gt;&lt;br&gt;&lt;b&gt;FR04&lt;/b&gt;&lt;br&gt;FR04-01 Compile generated MQL5 scripts&lt;br&gt;FR04-02 Capture compilation errors and logs&lt;br&gt;FR04-03 Iteratively fix errors until success or limit" style="shape=note;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=8;fontSize=10;" vertex="1" parent="system">
+          <mxGeometry x="40" y="580" width="460" height="880" as="geometry"/>
+        </mxCell>
+        <mxCell id="note2" value="&lt;b&gt;FR05-FR08&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;FR05&lt;/b&gt;&lt;br&gt;FR05-01 Execute compiled scripts on historical data&lt;br&gt;FR05-02 Configurable backtesting time ranges&lt;br&gt;FR05-03 Run backtesting in a containerized environment&lt;br&gt;&lt;br&gt;&lt;b&gt;FR06&lt;/b&gt;&lt;br&gt;FR06-01 Extract profit, win rate, drawdown, total trades&lt;br&gt;FR06-02 Calculate risk-reward ratio&lt;br&gt;&lt;br&gt;&lt;b&gt;FR07&lt;/b&gt;&lt;br&gt;FR07-01 Analyze profitability and stability&lt;br&gt;FR07-02 Classify strategy risk level&lt;br&gt;&lt;br&gt;&lt;b&gt;FR08&lt;/b&gt;&lt;br&gt;FR08-01 Refine strategies using evaluation results&lt;br&gt;FR08-02 Regenerate improved strategies iteratively" style="shape=note;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=8;fontSize=10;" vertex="1" parent="system">
+          <mxGeometry x="560" y="580" width="460" height="880" as="geometry"/>
+        </mxCell>
+        <mxCell id="note3" value="&lt;b&gt;FR09-FR12&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;FR09&lt;/b&gt;&lt;br&gt;FR09-01 Repeat generation, compilation, testing, improvement&lt;br&gt;FR09-02 Stop on acceptable performance or max iterations&lt;br&gt;&lt;br&gt;&lt;b&gt;FR10&lt;/b&gt;&lt;br&gt;FR10-01 Human-readable strategy explanation&lt;br&gt;FR10-02 Highlight risks and assumptions&lt;br&gt;&lt;br&gt;&lt;b&gt;FR11&lt;/b&gt;&lt;br&gt;FR11-01 Store compiled .ex5 files&lt;br&gt;FR11-02 Store performance metrics and analysis&lt;br&gt;&lt;br&gt;&lt;b&gt;FR12&lt;/b&gt;&lt;br&gt;FR12-01 Notify users on completion via webhook or UI" style="shape=note;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=8;fontSize=10;" vertex="1" parent="system">
+          <mxGeometry x="1080" y="580" width="460" height="880" as="geometry"/>
+        </mxCell>
+        <mxCell id="note4" value="&lt;b&gt;FR13-FR16&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;FR13&lt;/b&gt;&lt;br&gt;FR13-01 Display metrics in a dashboard&lt;br&gt;FR13-02 Visualize profit curve and drawdown&lt;br&gt;&lt;br&gt;&lt;b&gt;FR14&lt;/b&gt;&lt;br&gt;FR14-01 User accepts or requests modification&lt;br&gt;FR14-02 Restart process from user feedback&lt;br&gt;&lt;br&gt;&lt;b&gt;FR15&lt;/b&gt;&lt;br&gt;FR15-01 Include stop-loss and take-profit&lt;br&gt;FR15-02 Enforce capital allocation limits&lt;br&gt;&lt;br&gt;&lt;b&gt;FR16&lt;/b&gt;&lt;br&gt;FR16-01 Support concurrent users with worker-based architecture" style="shape=note;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingRight=8;spacingTop=8;fontSize=10;" vertex="1" parent="system">
+          <mxGeometry x="1600" y="580" width="460" height="880" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" edge="1" parent="1" source="actor" target="fr01">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" edge="1" parent="1" source="actor" target="fr02">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" edge="1" parent="1" source="actor" target="fr10">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" edge="1" parent="1" source="actor" target="fr12">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" edge="1" parent="1" source="actor" target="fr13">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" edge="1" parent="1" source="actor" target="fr14">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r1" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="system" source="fr01" target="fr02">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="r2" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="system" source="fr01" target="fr09">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="r3" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="system" source="fr09" target="fr03">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="r4" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="system" source="fr09" target="fr04">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="r5" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="system" source="fr09" target="fr05">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="r6" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="system" source="fr09" target="fr06">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="r7" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="system" source="fr09" target="fr07">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="r8" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="system" source="fr09" target="fr08">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="r9" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="system" source="fr09" target="fr11">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="r10" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="system" source="fr03" target="fr15">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="r11" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="system" source="fr10" target="fr07">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="r12" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="system" source="fr13" target="fr11">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="r13" value="&lt;&lt;extend&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="system" source="fr12" target="fr11">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="r14" value="&lt;&lt;include&gt;&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="system" source="fr14" target="fr09">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="r15" value="supports" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="system" source="fr16" target="fr02">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="r16" value="supports" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="system" source="fr16" target="fr09">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

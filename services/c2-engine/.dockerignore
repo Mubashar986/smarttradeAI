@@ -1,0 +1,7 @@
+.env
+.git
+.gitignore
+rust/target
+.claw/sessions
+__pycache__/
+*.pyc

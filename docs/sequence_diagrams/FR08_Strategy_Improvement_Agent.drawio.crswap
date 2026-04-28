@@ -1,0 +1,166 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="FR08-SD" name="FR08 - Strategy Improvement Sequence">
+    <mxGraphModel dx="1717" dy="937" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;fontSize=16;fontStyle=1;fillColor=none;strokeColor=none;align=center;" value="FR08 - Strategy Improvement Agent: Detailed Sequence Diagram" vertex="1">
+          <mxGeometry height="30" width="550" x="280" y="5" as="geometry" />
+        </mxCell>
+        <mxCell id="p1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=11;" value="Orchestrator" vertex="1">
+          <mxGeometry height="40" width="100" x="30" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=11;" value="Improvement&#xa;Agent" vertex="1">
+          <mxGeometry height="40" width="110" x="200" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=11;" value="Weakness&#xa;Analyzer" vertex="1">
+          <mxGeometry height="40" width="100" x="380" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=11;" value="Prompt&#xa;Constructor" vertex="1">
+          <mxGeometry height="40" width="100" x="550" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=11;" value="LLM API&#xa;(Groq/Gemini)" vertex="1">
+          <mxGeometry height="40" width="110" x="720" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=11;" value="Version&#xa;Store" vertex="1">
+          <mxGeometry height="40" width="100" x="900" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="l1" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#CCC;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="80" y="90" as="sourcePoint" />
+            <mxPoint x="80" y="900" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l2" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#CCC;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="255" y="90" as="sourcePoint" />
+            <mxPoint x="255" y="900" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l3" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#CCC;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="430" y="90" as="sourcePoint" />
+            <mxPoint x="430" y="900" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l4" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#CCC;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="600" y="90" as="sourcePoint" />
+            <mxPoint x="600" y="900" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l5" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#CCC;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="775" y="90" as="sourcePoint" />
+            <mxPoint x="775" y="900" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l6" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#CCC;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="950" y="90" as="sourcePoint" />
+            <mxPoint x="950" y="900" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m1" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;" value="1: improve(evalReport, currentCode, version=N)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="80" y="125" as="sourcePoint" />
+            <mxPoint x="255" y="125" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m2" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=9;" value="1.1: analyzeWeaknesses(evalReport.suggestions[], evalReport.failedScores[])">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="255" y="165" as="sourcePoint" />
+            <mxPoint x="430" y="165" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m3" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;strokeColor=#9673a6;" value="1.1.1: identifyWeakAreas(profitability, stability, risk)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="195" as="sourcePoint" />
+            <mxPoint x="440" y="225" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m4" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;strokeColor=#9673a6;" value="1.1.2: prioritizeImprovements(impact, feasibility)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="240" as="sourcePoint" />
+            <mxPoint x="440" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="note1" parent="1" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=9;align=left;spacingLeft=5;" value="Weakness categories:&#xa;- High drawdown: tighten SL&#xa;- Low win rate: refine entry&#xa;- Low profit: optimize exits&#xa;- Instability: add filters" vertex="1">
+          <mxGeometry height="70" width="160" x="460" y="195" as="geometry" />
+        </mxCell>
+        <mxCell id="m5" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=9;" value="1.1.3: return WeaknessReport(areas[], priorities[], fixSuggestions[])">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="430" y="300" as="sourcePoint" />
+            <mxPoint x="255" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m6" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=9;" value="2: constructImprovementPrompt(weaknessReport, currentCode, evalReport)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="255" y="345" as="sourcePoint" />
+            <mxPoint x="600" y="345" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m7" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;strokeColor=#9673a6;" value="2.1: injectPreviousMetrics(evalReport.scores)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="610" y="375" as="sourcePoint" />
+            <mxPoint x="610" y="405" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m8" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;strokeColor=#9673a6;" value="2.2: injectTargetedFixes(fixSuggestions[])">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="610" y="420" as="sourcePoint" />
+            <mxPoint x="610" y="450" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m9" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=9;" value="2.3: return RefinementPrompt(systemRole, code, weaknesses, targets)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="600" y="480" as="sourcePoint" />
+            <mxPoint x="255" y="480" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m10" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=9;" value="3: POST /chat/completions {model, messages: refinementPrompt, temp=0.2}">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="255" y="525" as="sourcePoint" />
+            <mxPoint x="775" y="525" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m11" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=10;" value="3.1: return refinedMQL5Code">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="775" y="565" as="sourcePoint" />
+            <mxPoint x="255" y="565" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m12" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;strokeColor=#9673a6;" value="3.2: diffAnalysis(currentCode, refinedCode)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="265" y="600" as="sourcePoint" />
+            <mxPoint x="265" y="630" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m13" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;strokeColor=#9673a6;" value="3.3: validateNoRegressions(diff)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="265" y="645" as="sourcePoint" />
+            <mxPoint x="265" y="675" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m14" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=9;" value="4: INSERT strategy_versions (taskId, version=N+1, improvedCode, diff, createdAt)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="255" y="715" as="sourcePoint" />
+            <mxPoint x="950" y="715" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m15" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=10;" value="4.1: return versionId (N+1)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="950" y="750" as="sourcePoint" />
+            <mxPoint x="255" y="750" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m16" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=9;" value="5: return ImprovedStrategy(code, versionId=N+1, changesApplied[], diff)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="255" y="800" as="sourcePoint" />
+            <mxPoint x="80" y="800" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

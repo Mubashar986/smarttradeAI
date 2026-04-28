@@ -1,0 +1,169 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="FR13-SD" name="FR13 - Results Visualization Sequence">
+    <mxGraphModel dx="1585" dy="865" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;fontSize=16;fontStyle=1;fillColor=none;strokeColor=none;align=center;" value="FR13 - Results Visualization: Detailed Sequence Diagram" vertex="1">
+          <mxGeometry height="30" width="550" x="280" y="5" as="geometry" />
+        </mxCell>
+        <mxCell id="p1" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Trader&#xa;(Actor)" vertex="1">
+          <mxGeometry height="50" width="30" x="45" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=11;" value="Dashboard&#xa;UI (React)" vertex="1">
+          <mxGeometry height="40" width="100" x="140" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=11;" value="Metrics&#xa;API" vertex="1">
+          <mxGeometry height="40" width="100" x="310" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=11;" value="Redis&#xa;Cache" vertex="1">
+          <mxGeometry height="40" width="100" x="480" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=11;" value="Chart Engine&#xa;(Plotly/D3)" vertex="1">
+          <mxGeometry height="40" width="110" x="650" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=11;" value="PDF Export&#xa;Service" vertex="1">
+          <mxGeometry height="40" width="100" x="830" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="l1" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#2D7600;fillColor=#60a917;strokeWidth=2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="60" y="100" as="sourcePoint" />
+            <mxPoint x="60" y="860" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l2" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#2D7600;fillColor=#60a917;strokeWidth=2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="190" y="90" as="sourcePoint" />
+            <mxPoint x="190" y="860" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l3" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#2D7600;strokeWidth=2;fillColor=#60a917;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="360" y="90" as="sourcePoint" />
+            <mxPoint x="360" y="860" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l4" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#2D7600;fillColor=#60a917;strokeWidth=2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="530" y="90" as="sourcePoint" />
+            <mxPoint x="530" y="860" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l5" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#2D7600;fillColor=#60a917;strokeWidth=2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="705" y="90" as="sourcePoint" />
+            <mxPoint x="705" y="860" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l6" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#2D7600;fillColor=#60a917;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="880" y="90" as="sourcePoint" />
+            <mxPoint x="880" y="860" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m1" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;" value="1: openResultsDashboard(taskId)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="60" y="125" as="sourcePoint" />
+            <mxPoint x="190" y="125" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m2" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;" value="1.1: GET /api/v1/tasks/{taskId}/metrics">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="190" y="165" as="sourcePoint" />
+            <mxPoint x="360" y="165" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m3" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;" value="1.1.1: GET cache:task:{taskId}:result">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="360" y="200" as="sourcePoint" />
+            <mxPoint x="530" y="200" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m4" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=9;" value="1.1.2: return cached metrics (or cache miss -&gt; DB)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="530" y="235" as="sourcePoint" />
+            <mxPoint x="360" y="235" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m5" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=9;" value="1.1.3: return MetricsResponse(netProfit, winRate, DD, sharpe, trades[])">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="360" y="270" as="sourcePoint" />
+            <mxPoint x="190" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m6" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=9;strokeColor=#9673a6;" value="2: renderMetricsCards(netProfit, winRate, sharpe, riskLevel)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="200" y="305" as="sourcePoint" />
+            <mxPoint x="200" y="335" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="par1" parent="1" style="shape=rectangle;rounded=0;whiteSpace=wrap;html=1;fillColor=none;dashed=1;strokeColor=#9673a6;fontSize=9;fontStyle=1;verticalAlign=top;align=left;spacingLeft=5;" value="par [Parallel chart rendering]" vertex="1">
+          <mxGeometry height="220" width="610" x="150" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="m7" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;" value="3a: renderEquityCurve(equityData[])">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="190" y="400" as="sourcePoint" />
+            <mxPoint x="705" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m8" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=10;" value="3a.1: return SVG (equity curve chart)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="705" y="430" as="sourcePoint" />
+            <mxPoint x="190" y="430" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m9" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;" value="3b: renderDrawdownChart(drawdownData[])">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="190" y="470" as="sourcePoint" />
+            <mxPoint x="705" y="470" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m10" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=10;" value="3b.1: return SVG (drawdown chart)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="705" y="500" as="sourcePoint" />
+            <mxPoint x="190" y="500" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m11" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;" value="3c: renderTradeDistribution(trades[])">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="190" y="530" as="sourcePoint" />
+            <mxPoint x="705" y="530" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m12" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=10;" value="3c.1: return SVG (histogram)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="705" y="555" as="sourcePoint" />
+            <mxPoint x="190" y="555" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m13" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=10;" value="4: display complete dashboard">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="190" y="610" as="sourcePoint" />
+            <mxPoint x="60" y="610" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="opt1" parent="1" style="shape=rectangle;rounded=0;whiteSpace=wrap;html=1;fillColor=none;dashed=1;strokeColor=#d6b656;fontSize=9;fontStyle=1;verticalAlign=top;align=left;spacingLeft=5;" value="opt [Trader clicks Export PDF]" vertex="1">
+          <mxGeometry height="130" width="890" x="30" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="m14" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;" value="5: exportPDF()">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="60" y="690" as="sourcePoint" />
+            <mxPoint x="190" y="690" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m15" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;" value="5.1: generatePDF(metrics, charts[], explanation)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="190" y="720" as="sourcePoint" />
+            <mxPoint x="880" y="720" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m16" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=10;" value="5.2: return pdfBlob">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="880" y="750" as="sourcePoint" />
+            <mxPoint x="190" y="750" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

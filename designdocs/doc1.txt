@@ -1,0 +1,507 @@
+SmartTrade AI Automation System 
+ 
+ 
+Final Year Project Proposal Session 
+2023-2027 
+ 
+ 
+ 
+A project submitted in partial fulfilment of the 
+COMSATS University Degree 
+of 
+BS in Computer Science / Software Engineering (CUI) 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Department of Computer Science 
+COMSATS University Islamabad, Lahore Campus 
+2 of 12 
+ 
+Project Registration 
+ 
+Project ID (for office use) 
+Type of project 
+[]  Traditional 
+[] Industrial 
+[] Continuing 
+Nature of project 
+[] Development 
+[] Research & Development 
+Sustainable 
+Development Goals 
+(SDGs) 
+[] Good Health and Well-Being 
+[] Quality Education 
+[] Industry, Innovation, and Infrastructure 
+ [] Gender Equality 
+[] Decent Work and Economic Growth 
+[] Climate Action 
+Area of specialization 
+[] Artificial Intelligence (AI) 
+ [] Blockchain 
+[] Cybersecurity 
+[] Data Science and Analytics 
+[] Game Development 
+[] Internet of Things (IoT) 
+[] Natural Language Processing (NLP) 
+[] Mobile App Development 
+[] Web Development 
+Project Group Members 
+Sr.# 
+Reg. # 
+Student Name 
+Email ID 
+Phone # 
+Signature 
+(i) 
+Group Leader 
+SP23-BSE-098 
+Mubashir Ashraf 
+sp23-bse-
+098@cuilahore.edu.pk 
+0318-3438976 
+(ii) 
+SP23-BSE-089     Malik Fahad Aziz 
+sp23-bse-
+089@cuilahore.edu.pk  
+0325-6799743 
+(iii) 
+ 
+ 
+ 
+ 
+Declaration: FYP group members have cleared all prerequisite courses for FYP-I as per their 
+degree requirements. 
+For BS (Computer Science) and BS (Software Engineering) 
+(CSC241 
+Object 
+Oriented 
+Programming, 
+CSC291 
+Software 
+Engineering 
+Concepts, 
+CSC270 Database Systems, HUM102 Report Writing Skills) 
+For BS (Artificial Intelligence) 
+(CSC291 Software Engineering Concepts, HUM102 Report Writing Skills) 
+Plagiarism Free Certificate 
+This is to certify that, I am Mubashir Ashraf S/O _Ashraf_, group leader of FYP under registration 
+no CUI /SP23-BSE-098/LHR at the Computer Science Department, COMSATS University 
+Islamabad, Lahore Campus. I declare that my FYP proposal is checked by my supervisor and the 
+similarity index is  
+% that is less than 20%, an acceptable limit by HEC. The report 
+is attached herewith as Appendix A. 
+Date:  
+ Name of Group Leader: Mubashir Ashraf 
+Signature:  
+ 
+Name of Supervisor:  
+  
+Co-Supervisor (if 
+any): 
+ 
+ 
+Designation: 
+ 
+  
+Designation: 
+ 
+ 
+Signature: 
+ 
+ 
+Signature: 
+ 
+ 
+3 of 12 
+ 
+ABSTRACT 
+ 
+The quick growth of digital asset trading has brought millions of traders into the markets, but to be 
+successful now, you need more than just manually executing trades—you need automation. Traders 
+put in a lot of time and money to make indicators, expert advisors, and backtesting systems, but 
+making reliable trading bots, indicators, and backtesting systems is still hard and expensive. Our 
+solution changes the game by letting traders easily turn their strategies into Pine Script or MQL4/5, 
+deploy fully automated trading bots, and run smart backtest with parameter optimization. This is a 
+powerful, all-in-one platform that makes advanced trading automation easy, profitable, and 
+available to all traders. 
+Our system is using Pine Script in Trading View for strategies. Also, we are removing the gap 
+between outputs and Expert Adviser by using Python webhook and signal server in MT4.Basic 
+features are position sizing, stop loss/take profit enforcement, drawdown monitoring and recording 
+all the trades executed. So, we remove the gap between the real time execution and those conceptual 
+models by providing a robust pipeline. This solution proposed by us is solving problems like delayed 
+decisions by humans and inability of non-technical traders to test their complicated strategies. 
+1. Introduction 
+ 
+During these last years, the continuous expanding nature of the virtual assets (stocks) has attracted 
+hundreds of thousands of traders to this market. But due to fast paced conditions of markets 
+nowadays doing work manually cannot guarantee your success rather it increases your effort and 
+wastes your time. So, now in order to deal with this situation there are automation tools which have 
+come in the market which are able to respond quickly to changes or fluctuations in prices leaving 
+the inability of human beings to make delayed decisions due to emotional weaknesses. So, AI 
+automation has revolutionized the way people are trading these days. 
+ 
+As we discussed above, market prices are fluctuating every time whether it is day or night. So, it is 
+impossible for any single person no matter how much expert he/she is, cannot keep up with the 
+market trends. That makes with manual trading it is easy to miss opportunities or lose money on 
+errors. In order to be ahead of the pack, traders must have the automation software to assist them in 
+making smarter decisions and react quicker without having to do it all manually every time. 
+ 
+This movement towards the automation has changed a lot of things. Like how people used to trade 
+and how they used to formulate strategies and then execute it by themselves. As people who are 
+connected to this trading business know that most of the profits from trading are earned through 
+indicators. Yet it is very hard to make good and stable trading bots because it requires a lot of effort 
+and cost. Effort in a sense that first a trader who has new strategy, first he has to find a good developer 
+with good knowledge of math and business and on his own field which is obviously good grip on 
+software development. And cost in a sense that it is a very expensive work as we want to build a 
+stable trading strategies which requires extensive back testing. 
+2. Problem Statement 
+Most traders still employ manual means to execute trades and to backtest their strategies in the fast-
+changing universe of digital trading today. Manual trading consumes much time, is error-prone, and 
+is often too slow to suit modern markets where prices change so quickly. The complexity of 
+programming and the steep development cost also make it difficult for traders to develop reliable 
+trading bots, indicators, and backtesting tools. 
+ 
+As a result, even skilled traders struggle to turn their ideas into automated systems that can work 
+4 of 12 
+ 
+efficiently and continuously. So, if automation is not used it creates gap between strategy design and 
+real time execution. This gap can cause many lost opportunities in the market. 
+3. Proposed Solution 
+Basically, our projects present a fast and robust trading platform which is automated in such a way 
+it is very convenient and friendly to use for a new user and this can streamline the whole process to 
+address the issue discussed in problem statement. The best part about our solution is that our platform 
+for someone who has no prior experience in programming has no need to worry at all. Because at 
+our system, they can seamlessly make their strategies and use them in Pine Scripts or MQL4/5 code. 
+We will provide traders with guidelines for how to manage risks and how to optimize the parameters 
+in such a way that it brings a better outcome and then they can easily back test their theories using 
+historical data. Now our main concern is to enable traders to focus mainly on strategy development 
+rather than getting involved in technical complexity. 
+4. Research Gaps and Technological Opportunities 
+ 
+Nowadays, everything is getting so fast that you cannot keep up if you are still stuck with those 
+primitive methods. Same is the case in trading world. There are some traders who still trade manually 
+which is very time consuming and is open to possible errors which can cause a lot of risks when 
+trading with huge sum of money. Also not to mention about how much time they spend while 
+adjusting different parameters and making trades manually. 
+ 
+As most of traders are not enough introduced to software or AI related stuff so it is kind of hard for 
+them to grasp technical terms and concepts rather than just focusing on trading strategies. Using new 
+technologies and stuff to tackle with these kinds of problems is a great opportunity. Now you can 
+easily develop or come up with a very robust, secure and fast workflow using Pine Script to make 
+new strategies and Meta Trade to execute them. 
+5. Objectives 
+The main objective of this system will enable traders to develop, test, and run their trading strategies 
+without requiring extensive technical expertise. An additional objective is to provide functionalities 
+such as position sizing, 
+stop-loss and take-profit levels, and automated trade recording for improved risk management. 
+ 
+Other aim is to bring sophisticated trading automation within reach of a broader segment of 
+traders, ranging from novices to professionals. The system will focus on simplicity, affordability, 
+and compatibility with different trading conditions. To help traders evaluate and refine their 
+strategies before live trading, it also aims to make it easier to perform backtesting based on historical 
+data. 
+6. Related work 
+1. Artificial Intelligence in Financial Trading Systems 
+These new researches in AI have most likely altered the way people used to develop trading software.  
+A comprehensive review by [1]emphasizes the advancement and trend of the subject by 
+systematically examining various AI methodologies used in financial trading [2]. 
+2. Frameworks for Algorithmic Trading 
+There have been tons of studies which were conducted to optimize the trading algorithms.  [2] [3], 
+for example, both of these presents an empirical analysis of trading systems developed through 
+5 of 12 
+ 
+different approaches, dividing them into three types and measuring their efficiency. 
+3. Hybrid Architectures in Trading Systems 
+It has been proved that if we inject a machine learning model in a rule-based system then it is 
+believed that user will get stable trading strategies from it. A paper by AI [4]describes the design of 
+a hybrid algorithmic trading system integrating machine learning models and rule-based risk 
+management. 
+4. Backtesting and Trading Platforms 
+Back Trader [5] is a popular Python library used to backtest trading strategies with ease of 
+development and testing. Trading View [6] gives sophisticated charting capabilities and Pine Script 
+to automate strategies. MT4/5 platforms are most common for forex and cryptocurrency automated 
+trading. YouTube videos and StatMetaDersmaterials give step-by-step guides to developing and 
+implementing automated trading systems. 
+7.  Proposed Methodology and Architecture 
+ 7.1 Methodology 
+Requirement Elicitation & Analysis:  
+In this step we will gather requirements from traders, developers and experts in algorithmic trading 
+to identify the functional and non-functional requirements for our platform. We will gather 
+requirements by join online trading forums and Subreddits. Requirements for features like strategy-
+to-code conversion, automated bot development, Expert Advisors development, parameter-
+optimized backtesting, multi-exchange support, trading view charting interface integrations and risk 
+management tools are most important for us. 
+System Design: 
+Designing the UI/UX mockups for the web and desktop. Designing backend architecture and 
+workflow for whole system, database schema, and data flow for trading signals, market data, and 
+bot execution are defined. Integration points with trading APIs (e.g., Meta trader, Trading view) are 
+planned to ensure smooth automation. 
+Strategy Conversion Module Development: 
+This Module will be developed to translate user-defined trading strategies in natural language into 
+algorithmic scripting languages like pine script for trading view and mql4/5 for the Meta trader 
+bases on the requirement. This module will also have coding chat-bot that can help user for onwards 
+difficulties like syntax validation, error handing and making changes in code according to their 
+requirements.  strategy templates are implemented to simplify more for translating strategy into 
+needed coding languages, 
+Trading Bot Development: 
+Fully automated trading bots are built to execute strategies across supported exchanges. Features 
+like order placement, opening and closing trades, stop-loss/limit order management, and real-time 
+monitoring and journaling all trades. Both will be optimized for low latency and reliability to ensure 
+trades are executed efficiently and effectively according to the traders need. 
+Backtesting & Optimization Engine:  
+Creating the backtesting module to simulate trading strategies on historical market data and on 
+different timeframes. Parameter optimization algorithms are used to identify the best-performing 
+parameters or configurations in each backtest by the backtesting engines. Results are visualized 
+through interactive charts, performance metrics, and trade logs for informed decision-making. 
+6 of 12 
+ 
+Market Data Integration:  
+Fetching the Real-time market data from different sources using secure APIs like finance, interactive 
+broker. Data likes price feeds, order book depth, and historical OHLCV. Proper and secure coaching 
+and rate-limit handling ensure system stability during high-frequency updates. 
+Risk Management & Alerts: 
+it includes the risk management features like maximum draw limits, position sizing and volatility 
+filters, are implemented. Notification alerts system to notify users for significant email, push 
+notifications, and desktop alerts.  
+Validation and Testing:  
+integration testing, system testing, Unit testing are performed to ensure the platform’s reliability and 
+trader assets safety. Backtesting results are validated against real historical data to confirm accuracy. 
+Beta testing with selected traders ensures usability and performance in live-like conditions. 
+Deployment and Maintenance:  
+Deploying the platform to cloud servers for security, high availability and scalability. Continuous 
+monitoring, updates and support are provided to main trading bots and expert advisors performance, 
+add new features and adapt to continuous changing market conditions and technology change. 
+7.2 System Architecture 
+1.Presentation Layer  
+•This layer includes chatbot interface where traders can describe and write their strategies in plain 
+language.  
+•A dashboard displays important information like backtesting results, optimized parameters, and 
+performance of live bots. 
+•It will also provide interactive trade charts for trade history, signal visualization, and market 
+analysis, allowing users to easily track how their strategies behave over time.  
+2. Chatbot and Strategy Generation Layer:  
+•This layer will understand and translate the user natural language.  
+•Here chatbot interprets natural language instructions and converts them into structured commands. 
+Based upon those, it will automatically generate strategy code in user required platform formats like 
+MQL4/5 for Meta trader, Pine script for Trading View, or Python using Back trader /backtesting.py.  
+•This layer also checks its generated code for syntax or logical issues before actual execution. In 
+addition, it will also suggest improvements and recommend parameter adjustments based on 
+previous results and strategy patterns.  
+3. Back testing & Optimization Layer  
+This layer runs multiple backtest across different timeframes and historical datasets to evaluate each 
+strategy. Basically, what it does that it goes searching for such combinations of parameters which 
+can maximize the performance while managing the whole risk and controlling the aim for good 
+returns. After the back testing, all the results are summarized and then recorded in metrices and then 
+these metrices are sent back to AI module for reinforced learning and to presentation layer. 
+4. Trading Execution Layer: 
+After the strategy is tested and later optimized then this layer (TEL) is responsible for running this 
+strategy in real markets. It also handles live monitoring, error handling and basic risk controls to 
+make sure strategies operate reliably during its execution  
+5. Market Data Integration Layer 
+This layer helps system to get the real-time and historical market data. It is connected to the data 
+sources like Trading view and MT4/5 APIs for fetching prices, indicators, and other relevant 
+information. Also, in this layer data is cleaned, standardized and stored in a specific and suitable 
+7 of 12 
+ 
+format for both backtesting and live trading, Caching mechanism is also used to reduce latency for 
+frequently accessed data. 
+6. Data & Storage Layer  
+Here in this layer different databases will be used like PostgreSQL store structured data and Redis 
+is used for caching. A Pinecone vector database is used for RAG (retrieval-augmented generation), 
+helps AI to refer back to previous strategies and performance results, metrics to make better 
+suggestions over time. 
+ 
+Architecture Diagram 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Figure 1:  System Architecture Diagram 
+8 of 12 
+ 
+ 
+ 
+Ghant chart 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+8. Success Criterion 
+Criterion 
+Test Method 
+Expected Result / Target 
+Data Integration 
+Accuracy 
+Test data fetching from APIs such as 
+Trading View and Meta Trader 4 
+(MT4) for different instruments. 
+≥ 95% correct synchronization of 
+live and historical data without data 
+loss or delay. 
+Strategy Execution 
+Reliability 
+Run automated strategies based on 
+technical indicators and patterns under 
+real-time conditions. 
+≥ 90% of trade signals executed 
+correctly according to defined rules 
+and market conditions. 
+Backtesting 
+Performance 
+Execute backtesting on multiple 
+datasets and compare with real-time 
+outcomes. 
+Backtesting results ≥ 85% aligned 
+with live strategy performance, 
+ensuring reliability. 
+System Latency & 
+Execution Speed 
+Measure time from signal generation to 
+trade execution. 
+≤ 1.5 seconds total latency under 
+normal network conditions. 
+Risk Management 
+Accuracy 
+Simulate stop-loss, take-profit, and 
+position-sizing scenarios. 
+100% correct risk control actions 
+triggered according to predefined 
+thresholds. 
+Security & API 
+Compliance 
+Verify secure API key handling, 
+encryption, and user authentication. 
+100% compliance with secure 
+authentication and no data exposure. 
+System Scalability Test system performance with 
+No significant slowdown or failure 
+9 of 12 
+ 
+Criterion 
+Test Method 
+Expected Result / Target 
+increased trading pairs and 
+simultaneous users. 
+up to 200 concurrent strategy 
+instances. 
+9. Team Roles and Responsibilities 
+Team 
+Member 
+Role 
+Tasks 
+Tentative 
+Completion 
+Mubashar 
+Ashraf 
+AI & Full-Stack 
+Engineer 
+• Jointly develop frontend & backend modules 
+(chatbot, dashboard, APIs). 
+• Integrate AI (LLMs, Lang Chain/Lang Graph, 
+RAG) for strategy generation & optimization. 
+• Work on backtesting, Dockerization, 
+deployment, and testing. 
+Month 1–7 
+Fahad Aziz 
+Full-Stack & 
+Deployment 
+Engineer 
+• Co-develop frontend/backend with real-time 
+AI integration. 
+• Implement backtesting workflows & Trading 
+View visualization. 
+• Contribute to architecture, containerization, 
+CI/CD, and system validation. 
+Month 1–8 
+10. Tools and Technologies 
+ 
+Lang: Python, JavaScript, Pine script, Mql4/5, back trader script 
+ 
+LLMs: Claude, OpenAI, DeepSeek, Gemini 
+ 
+Frameworks: Lang chain, Lang Graph, back trader, react.js 
+ 
+Database: MongoDB, pinecone 
+ 
+Platforms: trading view, Metatrader4, Meta trader 5 
+ 
+Deployment: Azure Cloud, Docker, Wine 
+ 
+ 
+ 
+11. References 
+ 
+[1] F. Dakalbab, Science direct. 
+[2] T. &. Frances, "Automated Trading System," Huang B., 2019. 
+[3]  
+[4] "Architecture of Trading Algorithm," Medium, 2025. 
+[5] "Back Trader," 2024.  
+[6] "Trading view and chart pine". 
+[7] ScienceDirect. 
+ 
+ 
+ 
+10 of 12 
+ 
+ 
+ 
+Appendix A 
+ 
+ 
+ 
+ 
+ 
+12. Include 
+here 
+the 
+1st 
+page 
+of 
+Turnitin 
+Report 
+(MANDATORY) 
+Every supervisor has his/her own Turnitin account. If not, then supervisors are requested to get the account from 
+Library as soon as possible. 
+ 
+11 of 12 
+ 
+Appendix B 
+ 
+ 
+ 
+ 
+ 
+ 
+13. Include here the 1st page of AI Report generated through 
+Turnitin (MANDATORY) 
+Every supervisor has his/her own Turnitin account. If not, then supervisors are requested to get the account from 
+Library as soon as possible. 
+ 
+12 of 12 
+ 
+ 

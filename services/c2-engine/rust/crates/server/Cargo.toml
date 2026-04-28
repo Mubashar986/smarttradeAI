@@ -1,0 +1,27 @@
+[package]
+name = "server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+argon2.workspace = true
+async-stream = "0.3"
+axum = { version = "0.8", features = ["ws"] }
+futures-util = "0.3"
+jsonwebtoken.workspace = true
+redis.workspace = true
+runtime = { path = "../runtime" }
+serde = { version = "1", features = ["derive"] }
+serde_json.workspace = true
+sqlx.workspace = true
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "net", "time"] }
+tower-http = { version = "0.6", features = ["cors"] }
+uuid.workspace = true
+
+[dev-dependencies]
+reqwest = { workspace = true, features = ["stream"] }
+
+[lints]
+workspace = true

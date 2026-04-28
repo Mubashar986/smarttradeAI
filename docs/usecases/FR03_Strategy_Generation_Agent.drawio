@@ -1,0 +1,52 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="FR03" name="FR03 - Strategy Generation Agent">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="2" value="SmartTradeAI System" style="shape=rectangle;rounded=1;whiteSpace=wrap;html=1;fillColor=none;dashed=1;dashPattern=8 8;strokeColor=#6C8EBF;strokeWidth=2;fontSize=16;fontStyle=1;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="220" y="30" width="520" height="480" as="geometry"/>
+        </mxCell>
+        <mxCell id="3" value="Trader" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="60" y="100" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="4" value="LLM API&#xa;(External)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="870" y="100" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="5" value="Code&#xa;Repository" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="870" y="350" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="10" value="Generate MQL5 Code&#xa;from Natural Language&#xa;(FR03-01)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="310" y="60" width="210" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="11" value="Invoke LLM API&#xa;for Code Generation" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="540" y="60" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="12" value="Enforce Predefined&#xa;MQL5 Code Structure&#xa;(FR03-02)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="320" y="210" width="210" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="13" value="Store Generated Code&#xa;with Versioning&#xa;(FR03-03)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="320" y="370" width="210" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="20" style="endArrow=none;html=1;strokeWidth=1.5;strokeColor=#333333;" edge="1" source="3" target="10" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="21" style="endArrow=none;html=1;strokeWidth=1.5;strokeColor=#333333;" edge="1" source="4" target="11" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="22" style="endArrow=none;html=1;strokeWidth=1.5;strokeColor=#333333;" edge="1" source="5" target="13" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="30" value="&lt;&lt;include&gt;&gt;" style="html=1;dashed=1;dashPattern=8 8;endArrow=open;endSize=12;strokeColor=#B85450;strokeWidth=1.5;fontColor=#B85450;fontSize=11;" edge="1" source="10" target="11" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="31" value="&lt;&lt;include&gt;&gt;" style="html=1;dashed=1;dashPattern=8 8;endArrow=open;endSize=12;strokeColor=#B85450;strokeWidth=1.5;fontColor=#B85450;fontSize=11;" edge="1" source="10" target="12" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="32" value="&lt;&lt;include&gt;&gt;" style="html=1;dashed=1;dashPattern=8 8;endArrow=open;endSize=12;strokeColor=#B85450;strokeWidth=1.5;fontColor=#B85450;fontSize=11;" edge="1" source="10" target="13" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

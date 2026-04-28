@@ -1,0 +1,196 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="FR16-SD" name="FR16 - Multi-User Scalability Sequence">
+    <mxGraphModel dx="824" dy="450" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;fontSize=16;fontStyle=1;fillColor=none;strokeColor=none;align=center;" value="FR16 - Multi-User Scalability: Detailed Sequence Diagram" vertex="1">
+          <mxGeometry height="30" width="550" x="280" y="5" as="geometry" />
+        </mxCell>
+        <mxCell id="p1" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Trader A" vertex="1">
+          <mxGeometry height="50" width="30" x="35" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p2" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Trader B" vertex="1">
+          <mxGeometry height="50" width="30" x="145" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=10;" value="API Gateway&#xa;(Load Balanced)" vertex="1">
+          <mxGeometry height="40" width="110" x="240" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=11;" value="Rate&#xa;Limiter" vertex="1">
+          <mxGeometry height="40" width="80" x="410" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=11;" value="Redis&#xa;Task Queue" vertex="1">
+          <mxGeometry height="40" width="100" x="550" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=10;" value="Worker Pool&#xa;(Auto-scaled)" vertex="1">
+          <mxGeometry height="40" width="110" x="710" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=11;" value="Session&#xa;Isolator" vertex="1">
+          <mxGeometry height="40" width="100" x="880" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="l1" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#2D7600;fillColor=#60a917;strokeWidth=2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="50" y="100" as="sourcePoint" />
+            <mxPoint x="50" y="950" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l2" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#2D7600;fillColor=#60a917;strokeWidth=2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="160" y="100" as="sourcePoint" />
+            <mxPoint x="160" y="950" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l3" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#2D7600;fillColor=#60a917;strokeWidth=2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="295" y="90" as="sourcePoint" />
+            <mxPoint x="295" y="950" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l4" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#2D7600;fillColor=#60a917;strokeWidth=2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="450" y="90" as="sourcePoint" />
+            <mxPoint x="450" y="950" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l5" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#2D7600;fillColor=#60a917;strokeWidth=2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="600" y="90" as="sourcePoint" />
+            <mxPoint x="600" y="950" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l6" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#2D7600;fillColor=#60a917;strokeWidth=2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="765" y="90" as="sourcePoint" />
+            <mxPoint x="765" y="950" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l7" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#2D7600;fillColor=#60a917;strokeWidth=2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="930" y="90" as="sourcePoint" />
+            <mxPoint x="930" y="950" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m1" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;" value="1: POST /api/v1/tasks (strategyA)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="50" y="125" as="sourcePoint" />
+            <mxPoint x="295" y="125" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m2" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;" value="2: POST /api/v1/tasks (strategyB)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="160" y="155" as="sourcePoint" />
+            <mxPoint x="295" y="155" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m3" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=9;" value="3: checkRateLimit(userA, tier=FREE, limit=5/hour)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="295" y="195" as="sourcePoint" />
+            <mxPoint x="450" y="195" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m4" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=10;" value="3.1: ALLOWED (3/5 used)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="450" y="225" as="sourcePoint" />
+            <mxPoint x="295" y="225" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m5" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=9;" value="4: checkRateLimit(userB, tier=PRO, limit=50/hour)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="295" y="260" as="sourcePoint" />
+            <mxPoint x="450" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m6" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=10;" value="4.1: ALLOWED (12/50 used)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="450" y="290" as="sourcePoint" />
+            <mxPoint x="295" y="290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m7" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;" value="5: createIsolatedSession(userA, taskA)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="295" y="330" as="sourcePoint" />
+            <mxPoint x="930" y="330" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m8" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;strokeColor=#9673a6;" value="5.1: allocateNamespace(/sessions/userA/taskA/)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="940" y="360" as="sourcePoint" />
+            <mxPoint x="940" y="390" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m9" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=10;" value="5.2: OK (isolated)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="930" y="415" as="sourcePoint" />
+            <mxPoint x="295" y="415" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m10" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;" value="6: createIsolatedSession(userB, taskB)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="295" y="450" as="sourcePoint" />
+            <mxPoint x="930" y="450" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m11" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=10;" value="6.1: OK (isolated)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="930" y="480" as="sourcePoint" />
+            <mxPoint x="295" y="480" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="par1" parent="1" style="shape=rectangle;rounded=0;whiteSpace=wrap;html=1;fillColor=none;dashed=1;strokeColor=#82b366;fontSize=9;fontStyle=1;verticalAlign=top;align=left;spacingLeft=5;" value="par [Concurrent task execution]" vertex="1">
+          <mxGeometry height="160" width="560" x="260" y="510" as="geometry" />
+        </mxCell>
+        <mxCell id="m12" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;" value="7a: LPUSH queue (taskA, priority=NORMAL)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="295" y="550" as="sourcePoint" />
+            <mxPoint x="600" y="550" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m13" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=9;" value="7a.1: Worker-1 BRPOP -&gt; execute taskA pipeline">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="600" y="580" as="sourcePoint" />
+            <mxPoint x="765" y="580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m14" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=10;" value="7b: LPUSH queue (taskB, priority=HIGH)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="295" y="615" as="sourcePoint" />
+            <mxPoint x="600" y="615" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m15" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=9;" value="7b.1: Worker-2 BRPOP -&gt; execute taskB pipeline">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="600" y="645" as="sourcePoint" />
+            <mxPoint x="765" y="645" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="note1" parent="1" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=9;align=left;spacingLeft=5;" value="Worker pool auto-scales:&#xa;- Min: 2 workers&#xa;- Max: 10 workers&#xa;- Scale trigger: queue &gt; 5&#xa;- Each worker is isolated" vertex="1">
+          <mxGeometry height="70" width="155" x="790" y="575" as="geometry" />
+        </mxCell>
+        <mxCell id="m16" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=10;" value="8a: TaskA result">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="765" y="720" as="sourcePoint" />
+            <mxPoint x="295" y="720" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m17" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=10;" value="8a.1: route result to Trader A (session-isolated)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="295" y="755" as="sourcePoint" />
+            <mxPoint x="50" y="755" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m18" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=10;" value="8b: TaskB result">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="765" y="800" as="sourcePoint" />
+            <mxPoint x="295" y="800" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m19" edge="1" parent="1" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=10;" value="8b.1: route result to Trader B (session-isolated)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="295" y="835" as="sourcePoint" />
+            <mxPoint x="160" y="835" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

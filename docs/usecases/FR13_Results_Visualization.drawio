@@ -1,0 +1,46 @@
+<mxfile host="draw.io">
+  <diagram id="FR13" name="FR13 - Results Visualization">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="2" value="SmartTradeAI System" style="shape=rectangle;rounded=1;whiteSpace=wrap;html=1;fillColor=none;dashed=1;dashPattern=8 8;strokeColor=#6C8EBF;strokeWidth=2;fontSize=16;fontStyle=1;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="220" y="30" width="520" height="420" as="geometry"/>
+        </mxCell>
+        <mxCell id="3" value="Trader" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="60" y="140" width="40" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="10" value="View Performance&#xa;Metrics Dashboard&#xa;(FR13-01)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="310" y="60" width="220" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="11" value="View Graphical&#xa;Visualizations (Profit&#xa;Curve, Drawdown)&#xa;(FR13-02)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="300" y="200" width="230" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="12" value="Load Stored&#xa;Metrics Data" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="540" y="130" width="170" height="65" as="geometry"/>
+        </mxCell>
+        <mxCell id="13" value="Render Chart&#xa;Components" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="540" y="260" width="170" height="65" as="geometry"/>
+        </mxCell>
+        <mxCell id="14" value="Export Report&#xa;as PDF" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="340" y="360" width="170" height="65" as="geometry"/>
+        </mxCell>
+        <mxCell id="20" style="endArrow=none;html=1;strokeWidth=1.5;" edge="1" source="3" target="10" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="21" style="endArrow=none;html=1;strokeWidth=1.5;" edge="1" source="3" target="11" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="30" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;" style="html=1;dashed=1;dashPattern=8 8;endArrow=open;endSize=12;strokeColor=#B85450;strokeWidth=1.5;fontColor=#B85450;fontSize=11;" edge="1" source="10" target="12" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="31" value="&amp;lt;&amp;lt;include&amp;gt;&amp;gt;" style="html=1;dashed=1;dashPattern=8 8;endArrow=open;endSize=12;strokeColor=#B85450;strokeWidth=1.5;fontColor=#B85450;fontSize=11;" edge="1" source="11" target="13" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="32" value="&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;" style="html=1;dashed=1;dashPattern=8 8;endArrow=open;endSize=12;strokeColor=#9673A6;strokeWidth=1.5;fontColor=#9673A6;fontSize=11;" edge="1" source="14" target="11" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
