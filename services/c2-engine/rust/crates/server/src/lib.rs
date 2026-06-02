@@ -486,8 +486,10 @@ pub fn app(state: AppState) -> Router {
         .allow_methods(Any)
         .allow_headers(Any);
 
+    // Canonical frontend-facing API surface.
     let protected_v1 = Router::new()
-        .route("/v1/sessions", post(create_session))
+        .route("/v1/sessions", post(create_session).get(list_sessions))
+        .route("/v1/sessions/{id}", get(get_session))
         .route("/v1/sessions/{id}/turn", post(send_turn))
         .route("/v1/sessions/{id}/events", get(stream_session_events))
         .route("/v1/ws/{id}", get(stream_session_websocket))
@@ -502,6 +504,7 @@ pub fn app(state: AppState) -> Router {
             auth::require_jwt,
         ));
 
+    // Legacy compatibility/debug routes. Keep behavior stable until callers migrate to /v1.
     Router::new()
         .route("/health", get(health))
         .route("/healthz", get(health))
@@ -1942,7 +1945,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn creates_and_lists_sessions() {
+    async fn creates_lists_and_gets_v1_sessions() {
         let server = TestServer::spawn().await;
         let client = Client::new();
 
@@ -1951,7 +1954,7 @@ mod tests {
 
         // when
         let sessions = client
-            .get(server.url("/sessions"))
+            .get(server.url("/v1/sessions"))
             .send()
             .await
             .expect("list request should succeed")
@@ -1961,7 +1964,7 @@ mod tests {
             .await
             .expect("list response should parse");
         let details = client
-            .get(server.url(&format!("/sessions/{}", created.session_id)))
+            .get(server.url(&format!("/v1/sessions/{}", created.session_id)))
             .send()
             .await
             .expect("details request should succeed")
@@ -1978,6 +1981,39 @@ mod tests {
         assert_eq!(sessions.sessions[0].message_count, 0);
         assert_eq!(details.id, "session-1");
         assert!(details.session.messages.is_empty());
+    }
+
+    #[tokio::test]
+    async fn legacy_session_routes_remain_available_for_compatibility() {
+        let server = TestServer::spawn().await;
+        let client = Client::new();
+
+        let created = create_session(&client, &server).await;
+
+        let sessions = client
+            .get(server.url("/sessions"))
+            .send()
+            .await
+            .expect("legacy list request should succeed")
+            .error_for_status()
+            .expect("legacy list request should return success")
+            .json::<ListSessionsResponse>()
+            .await
+            .expect("legacy list response should parse");
+        let details = client
+            .get(server.url(&format!("/sessions/{}", created.session_id)))
+            .send()
+            .await
+            .expect("legacy details request should succeed")
+            .error_for_status()
+            .expect("legacy details request should return success")
+            .json::<SessionDetailsResponse>()
+            .await
+            .expect("legacy details response should parse");
+
+        assert_eq!(sessions.sessions.len(), 1);
+        assert_eq!(sessions.sessions[0].id, created.session_id);
+        assert_eq!(details.id, created.session_id);
     }
 
     #[tokio::test]
