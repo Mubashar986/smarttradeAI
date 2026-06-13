@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Systems Architect"
+  short_description: "Designs AI systems from vague ideas to architecture roadmaps."
+  default_prompt: "Use $ai-systems-architect to transform vague AI ideas into clear system architectures, compare model and infrastructure options, design data and agentic workflows, identify risks, and create staged roadmaps."

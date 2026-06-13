@@ -1,0 +1,4 @@
+interface:
+  display_name: "SmartTrade Backend Engineer"
+  short_description: "Rust backend APIs, tasks, and persistence."
+  default_prompt: "Use $smarttrade-backend-engineer to implement or debug SmartTradeAI backend APIs, sessions, tasks, realtime events, persistence, and integration tests."
