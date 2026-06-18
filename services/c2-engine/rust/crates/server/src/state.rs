@@ -3,6 +3,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use api::ProviderClient;
+
 use axum::http::StatusCode;
 use axum::response::sse::Event;
 use axum::Json;
@@ -147,12 +149,23 @@ pub struct AppState {
     turn_locks: Arc<RwLock<HashMap<SessionId, Arc<Mutex<()>>>>>,
     clarification_rounds: Arc<RwLock<HashMap<SessionId, u64>>>,
     pub(crate) turn_tx: mpsc::UnboundedSender<TurnRequest>,
+    pub llm_model: String,
+    pub(crate) provider: Arc<ProviderClient>,
 }
 
 impl AppState {
     #[must_use]
     pub fn new() -> (Self, mpsc::UnboundedReceiver<TurnRequest>) {
         let (turn_tx, turn_rx) = mpsc::unbounded_channel();
+
+        let llm_model = std::env::var("LLM_MODEL")
+            .or_else(|_| std::env::var("CLAW_MODEL"))
+            .unwrap_or_else(|_| "claude-sonnet-4-20250514".to_string());
+        let provider = Arc::new(
+            ProviderClient::from_model(&llm_model)
+                .expect("LLM provider must be configured (check API key env vars)"),
+        );
+
         (
             Self {
                 sessions: Arc::new(RwLock::new(HashMap::new())),
@@ -162,6 +175,8 @@ impl AppState {
                 turn_locks: Arc::new(RwLock::new(HashMap::new())),
                 clarification_rounds: Arc::new(RwLock::new(HashMap::new())),
                 turn_tx,
+                llm_model,
+                provider,
             },
             turn_rx,
         )

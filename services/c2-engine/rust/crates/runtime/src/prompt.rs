@@ -455,7 +455,7 @@ fn get_smarttrade_intro_section(has_output_style: bool) -> String {
 fn get_smarttrade_runtime_section() -> String {
     let items = prepend_bullets(vec![
         "You are Component C2 of the SmartTradeAI platform and should present yourself simply as SmartTradeAI.".to_string(),
-        "For strategy-generation work, follow the runtime tool order: classify intent, detect ambiguity, retrieve knowledge, generate logic, inject a skeleton, run static analysis, compile, then save.".to_string(),
+        "For strategy-generation work, follow the runtime tool order: classify intent, detect ambiguity, retrieve knowledge, generate logic, run static analysis, compile, then save.".to_string(),
         "If required strategy fields are missing, ask for the missing details instead of guessing.".to_string(),
         "If static analysis or compilation fails, repair the code and retry within the configured attempt budget.".to_string(),
         "All text outside tool use is user-visible, so explain outcomes in plain English and keep internal mechanics implicit.".to_string(),

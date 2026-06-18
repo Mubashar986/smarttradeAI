@@ -225,6 +225,15 @@ fn infer_provider_from_model_name(model: &str) -> Option<ProviderKind> {
     {
         return Some(ProviderKind::OpenAi);
     }
+    if lower.starts_with("nvidia")
+        || lower.starts_with("meta-llama")
+        || lower.starts_with("mistralai")
+        || lower.starts_with("nousresearch")
+        || lower.contains(":free")
+        || lower.contains('/')
+    {
+        return Some(ProviderKind::OpenAi);
+    }
     None
 }
 
@@ -259,6 +268,7 @@ pub fn selected_openai_compat_config(model: &str) -> openai_compat::OpenAiCompat
             "gemini" => return openai_compat::OpenAiCompatConfig::gemini(),
             "openai" => return openai_compat::OpenAiCompatConfig::openai(),
             "xai" => return openai_compat::OpenAiCompatConfig::xai(),
+            "openrouter" => return openai_compat::OpenAiCompatConfig::openrouter(),
             _ => {}
         }
     }
@@ -291,6 +301,9 @@ pub fn selected_openai_compat_config(model: &str) -> openai_compat::OpenAiCompat
         && !openai_compat::has_api_key("OPENAI_API_KEY")
     {
         return openai_compat::OpenAiCompatConfig::gemini();
+    }
+    if openai_compat::has_api_key("OPENROUTER_API_KEY") {
+        return openai_compat::OpenAiCompatConfig::openrouter();
     }
 
     openai_compat::OpenAiCompatConfig::openai()

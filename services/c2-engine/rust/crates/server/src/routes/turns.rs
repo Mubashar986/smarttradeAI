@@ -2,15 +2,16 @@ use axum::extract::{Extension, Path, State};
 use axum::http::StatusCode;
 use axum::Json;
 use runtime::{
-    classify_intent, detect_ambiguity, extract_strategy_spec, generate_strategy_code,
-    run_static_analysis, AmbiguityStatus, ContentBlock, ConversationMessage, StrategyIntent,
+    ContentBlock, ConversationMessage, ConversationRuntime, PermissionMode, PermissionPolicy,
+    SmartTradeToolConfig, SmartTradeToolExecutor,
 };
 use serde_json::json;
 use tokio::sync::mpsc;
 
+use crate::llm_bridge::LlmBridge;
 use crate::middleware::auth::AuthClaims;
 use crate::state::{
-    AppState, ApiError, ApiResult, ErrorResponse, SendMessageRequest, SessionEvent, SessionId,
+    AppState, ApiResult, ErrorResponse, SendMessageRequest, SessionEvent, SessionId,
     SubmitTurnRequest, SubmitTurnResponse, TaskId, TaskResultType, TaskStatus, TaskStatusResponse,
     TurnContext, TurnMessageType, TurnRequest, TurnTask, not_found,
 };
@@ -113,6 +114,12 @@ async fn enqueue_turn(
         ));
     }
 
+    tracing::info!(
+        task_id = %task_id,
+        session_id = %session_id,
+        "turn enqueued"
+    );
+
     Ok(task_id)
 }
 
@@ -133,10 +140,28 @@ pub(crate) async fn get_task(
 }
 
 pub async fn run_turn_worker(state: AppState, mut turn_rx: mpsc::UnboundedReceiver<TurnRequest>) {
+    tracing::info!("turn worker started — waiting for requests");
     while let Some(request) = turn_rx.recv().await {
         let state = state.clone();
-        tokio::spawn(async move {
+        let task_id = request.task_id.clone();
+        let session_id = request.session_id.clone();
+
+        tracing::info!(
+            task_id = %task_id,
+            session_id = %session_id,
+            message_type = %request.message_type.as_str(),
+            "turn worker picked up request"
+        );
+
+        let watchdog_state = state.clone();
+        let handle = tokio::spawn(async move {
             if let Err(error) = process_turn(state.clone(), request.clone()).await {
+                tracing::error!(
+                    task_id = %request.task_id,
+                    session_id = %request.session_id,
+                    error = %error,
+                    "process_turn failed"
+                );
                 state.fail_task(&request.task_id, error.clone()).await;
                 broadcast_event(
                     &state,
@@ -159,7 +184,37 @@ pub async fn run_turn_worker(state: AppState, mut turn_rx: mpsc::UnboundedReceiv
                 .await;
             }
         });
+
+        // Check if the spawned task panicked. If it did, mark the task as
+        // failed so it doesn't remain in "running" forever.
+        tokio::spawn(async move {
+            if let Err(join_error) = handle.await {
+                let panic_msg = if join_error.is_panic() {
+                    format!("turn task panicked: {join_error}")
+                } else {
+                    format!("turn task cancelled: {join_error}")
+                };
+                tracing::error!(
+                    task_id = %task_id,
+                    session_id = %session_id,
+                    error = %panic_msg,
+                    "spawned turn task did not complete normally"
+                );
+                watchdog_state.fail_task(&task_id, panic_msg.clone()).await;
+                broadcast_event(
+                    &watchdog_state,
+                    &session_id,
+                    SessionEvent::Error {
+                        session_id: session_id.clone(),
+                        task_id: task_id.clone(),
+                        message: panic_msg,
+                    },
+                )
+                .await;
+            }
+        });
     }
+    tracing::warn!("turn worker channel closed — no more turns will be processed");
 }
 
 async fn process_turn(state: AppState, request: TurnRequest) -> Result<(), String> {
@@ -176,282 +231,181 @@ async fn process_turn(state: AppState, request: TurnRequest) -> Result<(), Strin
     )
     .await;
 
-    let combined_text = combined_user_text(&state, &request.session_id).await?;
-    let classification = classify_intent(&request.user_message);
+    // 1. Snapshot the current session conversation.
+    let session_snapshot = {
+        let sessions = state.sessions.read().await;
+        let session = sessions
+            .get(&request.session_id)
+            .ok_or_else(|| format!("session `{}` not found", request.session_id))?;
+        session.conversation.clone()
+    };
+
+    // 2. Build the LLM bridge from the provider stored in AppState.
+    let max_tokens = api::max_tokens_for_model(&state.llm_model);
+    let bridge = LlmBridge::new(state.provider.clone(), state.llm_model.clone(), max_tokens);
+
+    tracing::info!(
+        task_id = %request.task_id,
+        model = %state.llm_model,
+        max_tokens = max_tokens,
+        message_count = session_snapshot.messages.len(),
+        "starting LLM turn"
+    );
+
+    // 3. Build the tool executor.
+    let executor = SmartTradeToolExecutor::with_config(SmartTradeToolConfig::from_env());
+
+    // 4. Build permission policy (allow everything in headless server mode).
+    let policy = PermissionPolicy::new(PermissionMode::Allow);
+
+    // 5. System prompt.
+    let system_prompt = vec![
+        "You are an expert MQL5 trading strategy assistant. You help users design, \
+         build, and refine automated trading strategies (Expert Advisors) for \
+         MetaTrader 5. Use the provided tools to classify intents, check for \
+         missing details, search the knowledge base, run static analysis, \
+         compile, and save strategies. When generating a strategy, you MUST \
+         write the COMPLETE MQL5 code from scratch, including all necessary \
+         #property tags, OnInit(), OnDeinit(), and OnTick() event handlers. \
+         Do not rely on any external templates or skeletons."
+            .to_string(),
+    ];
+
+    // 6. Construct and run the conversation runtime.
     broadcast_status(
         &state,
         &request.session_id,
         &request.task_id,
-        "classified",
-        &format!(
-            "intent={} confidence={:.2}",
-            classification.intent.as_str(),
-            classification.confidence
-        ),
+        "llm_turn",
+        "running LLM conversation turn",
     )
     .await;
 
-    match classification.intent {
-        StrategyIntent::StrategyCreation
-        | StrategyIntent::StrategyRefinement
-        | StrategyIntent::ClarificationResponse => {
-            let spec = extract_strategy_spec(&combined_text);
-            let round = state.next_clarification_round(&request.session_id).await;
-            let ambiguity = detect_ambiguity(&spec, round);
-            match ambiguity.status {
-                AmbiguityStatus::Incomplete => {
-                    let prompt = ambiguity
-                        .next_question
-                        .clone()
-                        .unwrap_or_else(|| "Please provide the missing strategy detail.".to_string());
-                    let reply = ConversationMessage::assistant(vec![ContentBlock::Text {
-                        text: format!("I need one more detail before I can continue: {prompt}"),
-                    }]);
-                    append_assistant_reply(&state, &request.session_id, reply).await?;
-                    broadcast_event(
-                        &state,
-                        &request.session_id,
-                        SessionEvent::ClarificationQuestion {
-                            session_id: request.session_id.clone(),
-                            task_id: request.task_id.clone(),
-                            prompt,
-                            target_field: ambiguity.missing_fields.first().cloned(),
-                            missing_fields: ambiguity.missing_fields.clone(),
-                            round: Some(ambiguity.round),
-                            max_rounds: Some(ambiguity.max_rounds),
-                        },
-                    )
-                    .await;
-                    state
-                        .complete_task(
-                            &request.task_id,
-                            TaskResultType::Clarification,
-                            json!({
-                                "status": ambiguity.status,
-                                "round": ambiguity.round,
-                                "max_rounds": ambiguity.max_rounds,
-                                "missing_fields": ambiguity.missing_fields,
-                                "missing_count": ambiguity.missing_count,
-                                "provided_fields": ambiguity.provided_fields,
-                                "next_question": ambiguity.next_question,
-                                "classification": {
-                                    "intent": classification.intent,
-                                    "confidence": classification.confidence,
-                                    "all_scores": classification.all_scores,
-                                },
-                                "spec": ambiguity.spec,
-                            }),
-                        )
-                        .await;
-                    broadcast_status(
-                        &state,
-                        &request.session_id,
-                        &request.task_id,
-                        "waiting_for_clarification",
-                        "more strategy detail is required",
-                    )
-                    .await;
-                }
-                AmbiguityStatus::Complete => {
-                    state.clear_clarification_rounds(&request.session_id).await;
-                    let generated = generate_strategy_code(&combined_text, &spec)
-                        .map_err(|error| error.to_string())?;
-                    let analysis = run_static_analysis(&generated.code, 1);
-                    let analysis_details = serde_json::to_value(&analysis).unwrap_or_else(|_| {
-                        json!({
-                            "passed": false,
-                            "status": "SERIALIZATION_ERROR",
-                            "message": "failed to serialize static analysis result",
-                        })
-                    });
+    let mut runtime = ConversationRuntime::new(
+        session_snapshot,
+        bridge,
+        executor,
+        policy,
+        system_prompt,
+    );
 
-                    broadcast_event(
-                        &state,
-                        &request.session_id,
-                        SessionEvent::GeneratedCode {
-                            session_id: request.session_id.clone(),
-                            task_id: request.task_id.clone(),
-                            content: generated.code.clone(),
-                        },
-                    )
-                    .await;
-                    broadcast_event(
-                        &state,
-                        &request.session_id,
-                        SessionEvent::ValidationFeedback {
-                            session_id: request.session_id.clone(),
-                            task_id: request.task_id.clone(),
-                            stage: "static_analysis".to_string(),
-                            passed: analysis.passed,
-                            details: analysis_details.clone(),
-                        },
-                    )
-                    .await;
+    let (summary_result, mut runtime) = tokio::task::spawn_blocking(move || {
+        let result = runtime.run_turn_headless();
+        (result, runtime)
+    })
+    .await
+    .map_err(|e| format!("turn loop panicked or failed to join: {e}"))?;
 
-                    let reply = ConversationMessage::assistant(vec![ContentBlock::Text {
-                        text: if analysis.passed {
-                            format!(
-                                "I generated an MQL5 draft using the {} skeleton and static analysis passed. Compilation and persistence are still the next integration steps.",
-                                generated.skeleton_type
-                            )
-                        } else {
-                            format!(
-                                "I generated an MQL5 draft using the {} skeleton, but static analysis found issues that still need an automated correction loop.",
-                                generated.skeleton_type
-                            )
-                        },
-                    }]);
-                    append_assistant_reply(&state, &request.session_id, reply).await?;
-                    broadcast_event(
-                        &state,
-                        &request.session_id,
-                        SessionEvent::ValidationFeedback {
-                            session_id: request.session_id.clone(),
-                            task_id: request.task_id.clone(),
-                            stage: "spec_capture".to_string(),
-                            passed: true,
-                            details: json!({
-                                "classification": {
-                                    "intent": classification.intent,
-                                    "confidence": classification.confidence,
-                                    "all_scores": classification.all_scores,
-                                },
-                                "spec": ambiguity.spec,
-                            }),
-                        },
-                    )
-                    .await;
-                    state
-                        .complete_task(
-                            &request.task_id,
-                            TaskResultType::Generation,
-                            json!({
-                                "status": ambiguity.status,
-                                "round": ambiguity.round,
-                                "classification": {
-                                    "intent": classification.intent,
-                                    "confidence": classification.confidence,
-                                    "all_scores": classification.all_scores,
-                                },
-                                "spec": ambiguity.spec,
-                                "generation": {
-                                    "strategy_name": generated.strategy_name,
-                                    "skeleton_type": generated.skeleton_type,
-                                    "code": generated.code,
-                                    "explanation": generated.explanation,
-                                    "lines": generated.lines,
-                                },
-                                "analysis": analysis,
-                                "ready_for_compile": analysis.passed,
-                            }),
-                        )
-                        .await;
-                    broadcast_status(
-                        &state,
-                        &request.session_id,
-                        &request.task_id,
-                        "generation_complete",
-                        "generated code and static validation finished",
-                    )
-                    .await;
-                }
-                AmbiguityStatus::DraftSaved => {
-                    let reply = ConversationMessage::assistant(vec![ContentBlock::Text {
-                        text: ambiguity.message.clone(),
-                    }]);
-                    append_assistant_reply(&state, &request.session_id, reply).await?;
-                    state
-                        .complete_task(
-                            &request.task_id,
-                            TaskResultType::Clarification,
-                            json!({
-                                "status": ambiguity.status,
-                                "round": ambiguity.round,
-                                "max_rounds": ambiguity.max_rounds,
-                                "provided_fields": ambiguity.provided_fields,
-                                "spec": ambiguity.spec,
-                                "message": ambiguity.message,
-                            }),
-                        )
-                        .await;
-                    broadcast_status(
-                        &state,
-                        &request.session_id,
-                        &request.task_id,
-                        "draft_saved",
-                        "maximum clarification rounds exceeded",
-                    )
-                    .await;
-                }
-            }
-        }
-        StrategyIntent::ExplanationRequest | StrategyIntent::General => {
-            let response_text = if classification.intent == StrategyIntent::ExplanationRequest {
-                "I can help explain the SmartTrade strategy workflow, but the native explanation path is still being wired into the runtime."
-            } else {
-                "Please describe the trading strategy you want to automate, including pair, timeframe, entry, exit, and stop-loss."
-            };
-            let reply = ConversationMessage::assistant(vec![ContentBlock::Text {
-                text: response_text.to_string(),
-            }]);
-            append_assistant_reply(&state, &request.session_id, reply).await?;
-            state
-                .complete_task(
-                    &request.task_id,
-                    TaskResultType::Explanation,
-                    json!({
-                        "status": "responded",
-                        "classification": {
-                            "intent": classification.intent,
-                            "confidence": classification.confidence,
-                            "all_scores": classification.all_scores,
-                        },
-                        "message": response_text,
-                    }),
-                )
-                .await;
-            broadcast_status(
-                &state,
-                &request.session_id,
-                &request.task_id,
-                "responded",
-                "assistant reply generated",
-            )
-            .await;
+    let summary = summary_result.map_err(|e| {
+        tracing::error!(
+            task_id = %request.task_id,
+            error = %e,
+            "LLM turn failed"
+        );
+        format!("LLM turn failed: {e}")
+    })?;
+
+    tracing::info!(
+        task_id = %request.task_id,
+        iterations = summary.iterations,
+        input_tokens = summary.usage.input_tokens,
+        output_tokens = summary.usage.output_tokens,
+        assistant_messages = summary.assistant_messages.len(),
+        tool_results = summary.tool_results.len(),
+        "LLM turn completed"
+    );
+
+    // 7. Extract the response text from the last assistant message.
+    let response_text = summary
+        .assistant_messages
+        .last()
+        .map(|msg| {
+            msg.blocks
+                .iter()
+                .filter_map(|block| match block {
+                    ContentBlock::Text { text } => Some(text.as_str()),
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+                .join("\n")
+        })
+        .unwrap_or_default();
+
+    // 8. Write the updated session back to AppState.
+    let updated_session = runtime.into_session();
+    {
+        let mut sessions = state.sessions.write().await;
+        if let Some(session) = sessions.get_mut(&request.session_id) {
+            session.conversation = updated_session;
         }
     }
 
+    // 9. Broadcast the assistant reply.
+    let reply = ConversationMessage::assistant(vec![ContentBlock::Text {
+        text: response_text.clone(),
+    }]);
+    // Note: we don't push to session.conversation again — it's already there
+    // from the runtime. We only broadcast the event for SSE listeners.
+    {
+        let sessions = state.sessions.read().await;
+        if let Some(session) = sessions.get(&request.session_id) {
+            session.broadcast(SessionEvent::AssistantReply {
+                session_id: request.session_id.clone(),
+                message: reply,
+            });
+        }
+    }
+
+    // 10. Complete the task.
+    state
+        .complete_task(
+            &request.task_id,
+            TaskResultType::Generation,
+            json!({
+                "status": "completed",
+                "iterations": summary.iterations,
+                "usage": {
+                    "input_tokens": summary.usage.input_tokens,
+                    "output_tokens": summary.usage.output_tokens,
+                    "cache_creation_input_tokens": summary.usage.cache_creation_input_tokens,
+                    "cache_read_input_tokens": summary.usage.cache_read_input_tokens,
+                },
+                "response_preview": response_text.chars().take(200).collect::<String>(),
+            }),
+        )
+        .await;
+    broadcast_status(
+        &state,
+        &request.session_id,
+        &request.task_id,
+        "generation_complete",
+        "LLM conversation turn finished",
+    )
+    .await;
+
+    // 11. Broadcast turn complete.
     broadcast_event(
         &state,
         &request.session_id,
         SessionEvent::TurnComplete {
             session_id: request.session_id.clone(),
-            iterations: 1,
+            iterations: summary.iterations,
         },
     )
     .await;
+
+    tracing::info!(
+        task_id = %request.task_id,
+        session_id = %request.session_id,
+        "turn processing complete"
+    );
+
     Ok(())
 }
 
-async fn combined_user_text(state: &AppState, session_id: &str) -> Result<String, String> {
-    let sessions = state.sessions.read().await;
-    let session = sessions
-        .get(session_id)
-        .ok_or_else(|| format!("session `{session_id}` not found"))?;
-    Ok(session
-        .conversation
-        .messages
-        .iter()
-        .filter(|message| matches!(message.role, runtime::MessageRole::User))
-        .flat_map(|message| message.blocks.iter())
-        .filter_map(|block| match block {
-            ContentBlock::Text { text } => Some(text.as_str()),
-            ContentBlock::ToolUse { .. } | ContentBlock::ToolResult { .. } => None,
-        })
-        .collect::<Vec<_>>()
-        .join("\n"))
-}
 
+
+#[allow(dead_code)]
 async fn append_assistant_reply(
     state: &AppState,
     session_id: &str,

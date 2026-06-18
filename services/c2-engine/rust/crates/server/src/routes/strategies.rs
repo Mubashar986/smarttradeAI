@@ -11,7 +11,7 @@ use sqlx::Row;
 
 use crate::middleware::auth::AuthClaims;
 use crate::state::{
-    ApiError, ApiResult, DeleteStrategyResponse, ErrorResponse, ListStrategiesResponse,
+    ApiResult, DeleteStrategyResponse, ErrorResponse, ListStrategiesResponse,
     StrategyDetailsResponse, StrategyRecord, UpdateStrategyRequest, internal_error, not_found,
     unix_timestamp_millis,
 };

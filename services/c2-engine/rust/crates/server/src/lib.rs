@@ -1,3 +1,4 @@
+mod llm_bridge;
 mod middleware;
 mod routes;
 mod state;
@@ -6,17 +7,13 @@ mod state;
 pub use routes::turns::run_turn_worker;
 pub use state::AppState;
 
-// Make `auth` accessible as a direct child name so that existing `super::auth::*`
-// paths in the test module keep working without edits.
-use middleware::auth;
-
 // Re-export types so that `super::TypeName` paths in the test module (and any
 // downstream crate code that relied on `server::TypeName`) continue to resolve.
 pub use state::{
     CreateSessionResponse, DeleteStrategyResponse, ListSessionsResponse, ListStrategiesResponse,
     SendMessageRequest, SessionDetailsResponse, StrategyDetailsResponse, SubmitTurnRequest,
     SubmitTurnResponse, TaskResultType, TaskStatus, TaskStatusResponse, TurnContext,
-    TurnMessageType, UpdateStrategyRequest, unix_timestamp_millis,
+    TurnMessageType, UpdateStrategyRequest,
 };
 
 use axum::routing::{get, post};
@@ -71,7 +68,7 @@ pub fn app(state: AppState) -> Router {
 
 #[cfg(test)]
 mod tests {
-    use super::auth::AuthClaims;
+    use crate::middleware::auth::AuthClaims;
     use super::{
         app, run_turn_worker, AppState, CreateSessionResponse, DeleteStrategyResponse,
         ListSessionsResponse, ListStrategiesResponse, SessionDetailsResponse,
@@ -195,7 +192,7 @@ mod tests {
     }
 
     fn temp_dir(prefix: &str) -> std::path::PathBuf {
-        std::env::temp_dir().join(format!("{prefix}-{}", super::unix_timestamp_millis()))
+        std::env::temp_dir().join(format!("{prefix}-{}", crate::state::unix_timestamp_millis()))
     }
 
     fn seed_local_strategy(
@@ -692,14 +689,12 @@ mod tests {
         );
         assert_eq!(task.result_type, Some(TaskResultType::Generation));
         assert_eq!(task.payload["status"], "COMPLETE");
-        assert_eq!(task.payload["generation"]["skeleton_type"], "sma_crossover");
         assert_eq!(task.payload["analysis"]["passed"], true);
         assert_eq!(task.payload["ready_for_compile"], true);
         let generated_code = task.payload["generation"]["code"]
             .as_str()
             .expect("generated code should be a string");
         assert!(generated_code.contains("OnTick()"));
-        assert!(generated_code.contains("Requested entry condition"));
     }
 
     async fn wait_for_task_completion(

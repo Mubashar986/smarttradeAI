@@ -328,7 +328,7 @@ Important behavior:
 - Progress is streamed through SSE or WebSocket.
 - The worker uses all user messages in the session when extracting the strategy spec.
 - The worker serializes processing per session to avoid overlapping turns.
-- The active turn flow does not call an LLM provider.
+- The current LLM-backed turn flow calls the configured provider through `LlmBridge`; provider stalls surface as task/SSE errors.
 
 ## 10. Actual Strategy Generation Flow
 
@@ -593,7 +593,7 @@ Current environment passed to `c2-engine`:
 
 Current limitation:
 
-- `REDIS_URL`, `LLM_PROVIDER`, Groq/Gemini/OpenAI keys, and Pinecone variables are available to the container, but the main turn processor does not use Redis, LLM providers, or remote Pinecone RAG.
+- `REDIS_URL`, `LLM_PROVIDER`, Groq/Gemini/OpenAI/OpenRouter keys, and Pinecone variables are available to the container. The turn processor uses the configured LLM provider for `LlmBridge`, but Redis-backed queues and remote Pinecone RAG are not active in the main turn path.
 
 ## 17. Current Skeleton Templates
 
@@ -620,7 +620,7 @@ The templates are compiled into the Rust runtime with `include_str!`, so the run
 | Ambiguity detection | Ask for missing fields | Implemented. |
 | Clarification rounds | Max 5 rounds | Implemented with in-memory per-session counter. |
 | Knowledge search/RAG | Retrieve relevant docs/templates | Local skeleton search exists; main turn path does not call it. |
-| LLM-driven generation | Provider creates strategy/code | Provider layer exists; active turn path does not use it. |
+| LLM-driven generation | Provider creates strategy/code | Active turn path uses the configured provider through `LlmBridge`. |
 | Deterministic code generation | Fallback generator | Implemented and currently primary. |
 | Skeleton injection | Use MQL5 templates | Implemented. |
 | Static analysis | Validate generated MQL5 | Implemented; active path runs once. |

@@ -6,6 +6,7 @@ services:
       - "3000:3000"
     environment:
       # --- LLM Provider Config ---
+      - LLM_MODEL=${LLM_MODEL:-${CLAW_MODEL:-llama-3.3-70b-versatile}}
       - LLM_PROVIDER=${LLM_PROVIDER:-groq}
       - CLAW_MODEL=${CLAW_MODEL:-llama-3.3-70b-versatile}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
@@ -19,10 +20,18 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - XAI_API_KEY=${XAI_API_KEY:-}
       - XAI_BASE_URL=${XAI_BASE_URL:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
       # --- Engine Config ---
-      - CLAW_MAX_TOKENS=${CLAW_MAX_TOKENS:-512}
+      - CLAW_MAX_TOKENS=${CLAW_MAX_TOKENS:-8192}
       - CLAW_TEMPERATURE=${CLAW_TEMPERATURE:-0.2}
       - CLAW_MAX_TURN_ITERATIONS=${CLAW_MAX_TURN_ITERATIONS:-8}
+      - LLM_TOP_P=${LLM_TOP_P:-1}
+      - LLM_REASONING_EFFORT=${LLM_REASONING_EFFORT:-}
+      - LLM_TOKEN_LIMIT_FIELD=${LLM_TOKEN_LIMIT_FIELD:-}
+      - LLM_STREAM_TIMEOUT_SECS=${LLM_STREAM_TIMEOUT_SECS:-600}
+      - LLM_EVENT_TIMEOUT_SECS=${LLM_EVENT_TIMEOUT_SECS:-300}
+      - LLM_INITIAL_STALL_RETRIES=${LLM_INITIAL_STALL_RETRIES:-1}
       # --- Infrastructure ---
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=postgresql://smarttrade:smarttrade@postgres:5432/smarttrade
@@ -31,6 +40,8 @@ services:
       - C2_JWT_SECRET=${C2_JWT_SECRET:-}
       - C2_JWT_ISSUER=${C2_JWT_ISSUER:-}
       - C2_JWT_AUDIENCE=${C2_JWT_AUDIENCE:-}
+      # --- Logging ---
+      - RUST_LOG=${RUST_LOG:-info,server=debug,runtime=debug}
       # --- Pinecone (optional) ---
       - PINECONE_API_KEY=${PINECONE_API_KEY:-}
       - PINECONE_INDEX=${PINECONE_INDEX:-mql5-docs}
