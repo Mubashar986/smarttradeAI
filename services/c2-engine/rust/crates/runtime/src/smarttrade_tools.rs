@@ -71,12 +71,6 @@ const REQUIRED_FIELDS: [(&str, &str); 6] = [
     ("timeframe", "What chart timeframe? (e.g., M15, H1, H4, D1)"),
 ];
 
-const BASIC_EA_TEMPLATE: &str = include_str!("../../../../skeletons/basic_ea.mqh");
-const BREAKOUT_TEMPLATE: &str = include_str!("../../../../skeletons/breakout.mqh");
-const GRID_TEMPLATE: &str = include_str!("../../../../skeletons/grid.mqh");
-const RSI_MEAN_REVERSION_TEMPLATE: &str =
-    include_str!("../../../../skeletons/rsi_mean_reversion.mqh");
-const SMA_CROSSOVER_TEMPLATE: &str = include_str!("../../../../skeletons/sma_crossover.mqh");
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -176,7 +170,6 @@ pub struct AmbiguityResult {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct GeneratedStrategy {
     pub strategy_name: String,
-    pub skeleton_type: String,
     pub code: String,
     pub explanation: String,
     pub lines: usize,
@@ -219,20 +212,6 @@ pub struct KnowledgeBaseSearchResult {
     pub note: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct InjectedSkeletonResult {
-    pub success: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub skeleton_used: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub strategy_name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub lines: Option<usize>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CompilerMessage {
@@ -440,26 +419,6 @@ impl SmartTradeToolExecutor {
         }
         to_tool_json(&result)
     }
-
-    fn inject_skeleton_tool(&mut self, payload: &JsonValue) -> Result<String, ToolError> {
-        let logic_code = required_string_field(payload, "logic_code")?;
-        let skeleton_type = payload
-            .get("skeleton_type")
-            .and_then(JsonValue::as_str)
-            .unwrap_or("basic_ea");
-        let strategy_name = payload
-            .get("strategy_name")
-            .and_then(JsonValue::as_str)
-            .unwrap_or("Unnamed_EA");
-        let parameters = payload.get("parameters").and_then(JsonValue::as_object);
-        let result = inject_skeleton_tool(
-            &logic_code,
-            skeleton_type,
-            strategy_name,
-            parameters,
-        );
-        to_tool_json(&result)
-    }
 }
 
 impl ToolExecutor for SmartTradeToolExecutor {
@@ -495,10 +454,7 @@ impl ToolExecutor for SmartTradeToolExecutor {
                     &self.config,
                 ))
             }
-            "inject_skeleton" => {
-                let payload = parse_required_json(input)?;
-                self.inject_skeleton_tool(&payload)
-            }
+
             "run_static_analysis" => {
                 let payload = parse_required_json(input)?;
                 self.run_static_analysis_tool(&payload)
@@ -683,65 +639,6 @@ pub fn search_knowledge_base(query: &str, top_k: usize) -> KnowledgeBaseSearchRe
     search_knowledge_base_with_config(query, top_k, &SmartTradeToolConfig::from_env())
 }
 
-#[must_use]
-pub fn inject_skeleton_tool(
-    logic_code: &str,
-    skeleton_type: &str,
-    strategy_name: &str,
-    parameters: Option<&JsonObject>,
-) -> InjectedSkeletonResult {
-    let parameter_lines = parameter_lines_from_json(parameters);
-    match inject_skeleton(
-        strategy_name,
-        skeleton_type,
-        &parameter_lines,
-        logic_code,
-        "// Exit logic included in entry logic above",
-    ) {
-        Ok(code) => InjectedSkeletonResult {
-            success: true,
-            lines: Some(code.lines().count()),
-            code: Some(code),
-            skeleton_used: Some(skeleton_type.to_string()),
-            strategy_name: Some(strategy_name.to_string()),
-            error: None,
-        },
-        Err(error) => InjectedSkeletonResult {
-            success: false,
-            code: None,
-            skeleton_used: None,
-            strategy_name: None,
-            lines: None,
-            error: Some(error.to_string()),
-        },
-    }
-}
-
-pub fn generate_strategy_code(
-    user_message: &str,
-    spec: &StrategySpec,
-) -> Result<GeneratedStrategy, GenerationError> {
-    let skeleton_type = select_skeleton_type(user_message, spec).to_string();
-    let strategy_name = strategy_name_for_spec(spec, &skeleton_type);
-    let parameter_lines = build_parameter_lines(spec);
-    let entry_logic = build_entry_logic(user_message, spec, &skeleton_type);
-    let exit_logic = build_exit_logic(spec, &skeleton_type);
-    let code = inject_skeleton(
-        &strategy_name,
-        &skeleton_type,
-        &parameter_lines,
-        &entry_logic,
-        &exit_logic,
-    )?;
-
-    Ok(GeneratedStrategy {
-        explanation: build_explanation(spec, &skeleton_type),
-        lines: code.lines().count(),
-        code,
-        skeleton_type,
-        strategy_name,
-    })
-}
 
 #[must_use]
 pub fn run_static_analysis(code: &str, retry: u64) -> StaticAnalysisResult {
@@ -904,55 +801,21 @@ pub fn save_strategy(request: &SaveStrategyRequest) -> SaveStrategyResult {
 }
 
 fn search_knowledge_base_with_config(
-    query: &str,
-    top_k: usize,
+    _query: &str,
+    _top_k: usize,
     config: &SmartTradeToolConfig,
 ) -> KnowledgeBaseSearchResult {
-    let query_lower = query.to_lowercase();
-    let keywords = query_lower
-        .split_whitespace()
-        .filter(|keyword| !keyword.is_empty())
-        .collect::<Vec<_>>();
-
-    let mut results = local_skeleton_catalog()
-        .into_iter()
-        .filter_map(|(id, content)| {
-            let score = keywords
-                .iter()
-                .filter(|keyword| {
-                    id.to_lowercase().contains(**keyword)
-                        || content.to_lowercase().contains(**keyword)
-                })
-                .count();
-            (score > 0).then(|| KnowledgeBaseMatch {
-                id: id.to_string(),
-                score: score as f32 / keywords.len().max(1) as f32,
-                content: truncate_content(content, 2_000),
-                source: "local_skeleton".to_string(),
-            })
-        })
-        .collect::<Vec<_>>();
-
-    results.sort_by(|left, right| {
-        right
-            .score
-            .partial_cmp(&left.score)
-            .unwrap_or(std::cmp::Ordering::Equal)
-            .then_with(|| left.id.cmp(&right.id))
-    });
-    results.truncate(top_k);
-
     KnowledgeBaseSearchResult {
         source: "local_fallback".to_string(),
-        count: results.len(),
-        results,
+        count: 0,
+        results: Vec::new(),
         note: if config.pinecone_api_key.is_some() {
             Some(format!(
-                "Pinecone is configured for index `{}` / namespace `{}`, but this runtime currently uses the local skeleton fallback.",
+                "Pinecone is configured for index `{}` / namespace `{}`, but local search is disabled and Pinecone query is not fully implemented.",
                 config.pinecone_index, config.pinecone_namespace
             ))
         } else {
-            Some("Pinecone not configured - using local skeleton templates".to_string())
+            Some("Pinecone not configured - knowledge base is empty".to_string())
         },
     }
 }
@@ -1371,16 +1234,6 @@ fn parameter_lines_from_json(parameters: Option<&JsonObject>) -> String {
     }
 }
 
-fn local_skeleton_catalog() -> [(&'static str, &'static str); 5] {
-    [
-        ("basic_ea", BASIC_EA_TEMPLATE),
-        ("breakout", BREAKOUT_TEMPLATE),
-        ("grid", GRID_TEMPLATE),
-        ("rsi_mean_reversion", RSI_MEAN_REVERSION_TEMPLATE),
-        ("sma_crossover", SMA_CROSSOVER_TEMPLATE),
-    ]
-}
-
 fn truncate_content(content: &str, max_chars: usize) -> String {
     let mut truncated = content.chars().take(max_chars).collect::<String>();
     if content.chars().count() > max_chars {
@@ -1503,199 +1356,6 @@ fn capture_preserving_case(text: &str, patterns: &[&str]) -> Option<String> {
     None
 }
 
-fn select_skeleton_type(user_message: &str, spec: &StrategySpec) -> &'static str {
-    let text = format!(
-        "{} {} {}",
-        user_message,
-        spec.entry_condition.as_deref().unwrap_or(""),
-        spec.exit_condition.as_deref().unwrap_or("")
-    )
-    .to_lowercase();
-
-    if text.contains("grid") {
-        "grid"
-    } else if text.contains("breakout") {
-        "breakout"
-    } else if text.contains("rsi") || text.contains("mean reversion") {
-        "rsi_mean_reversion"
-    } else if (text.contains("sma") || text.contains("ema")) && text.contains("cross") {
-        "sma_crossover"
-    } else {
-        "basic_ea"
-    }
-}
-
-fn strategy_name_for_spec(spec: &StrategySpec, skeleton_type: &str) -> String {
-    let base = match skeleton_type {
-        "sma_crossover" => "Sma_Crossover",
-        "rsi_mean_reversion" => "Rsi_Mean_Reversion",
-        "breakout" => "Breakout",
-        "grid" => "Grid",
-        _ => "Generated_Strategy",
-    };
-    let pair = spec.pair.as_deref().unwrap_or("PAIR");
-    let timeframe = spec.timeframe.as_deref().unwrap_or("TF");
-    format!("{base}_{pair}_{timeframe}")
-}
-
-fn build_parameter_lines(spec: &StrategySpec) -> String {
-    let mut lines = Vec::new();
-    if let Some(pair) = &spec.pair {
-        lines.push(format!(
-            "input string StrategyPair = \"{}\";",
-            escape_mql5_string(pair)
-        ));
-    }
-    if let Some(timeframe) = &spec.timeframe {
-        lines.push(format!(
-            "input string StrategyTimeframe = \"{}\";",
-            escape_mql5_string(timeframe)
-        ));
-    }
-    if let Some(action) = &spec.action {
-        lines.push(format!(
-            "input string StrategyBias = \"{}\";",
-            escape_mql5_string(action)
-        ));
-    }
-    if let Some(stop_loss) = &spec.stop_loss {
-        lines.push(format!(
-            "input string RequestedStopLoss = \"{}\";",
-            escape_mql5_string(stop_loss)
-        ));
-    }
-    if lines.is_empty() {
-        "// No custom parameters".to_string()
-    } else {
-        lines.join("\n")
-    }
-}
-
-fn build_entry_logic(user_message: &str, spec: &StrategySpec, skeleton_type: &str) -> String {
-    let mut lines = vec![
-        format!(
-            "    // Requested pair: {}",
-            spec.pair.as_deref().unwrap_or("CURRENT_SYMBOL")
-        ),
-        format!(
-            "    // Requested timeframe: {}",
-            spec.timeframe.as_deref().unwrap_or("CURRENT_TIMEFRAME")
-        ),
-    ];
-
-    if let Some(entry) = &spec.entry_condition {
-        lines.push(format!(
-            "    // Requested entry condition: {}",
-            sanitize_comment(entry)
-        ));
-    }
-    if let Some(action) = &spec.action {
-        lines.push(format!(
-            "    // Requested action bias: {}",
-            sanitize_comment(action)
-        ));
-    }
-
-    match skeleton_type {
-        "basic_ea" => {
-            lines.extend([
-                "    bool entrySignal = false;".to_string(),
-                "    // Native strategy-family logic for this prompt is not ported yet.".to_string(),
-                format!(
-                    "    // Original request: {}",
-                    sanitize_comment(user_message)
-                ),
-                "    if(entrySignal)".to_string(),
-                "    {".to_string(),
-                format!(
-                    "        bool isBuy = {};",
-                    if spec.action.as_deref() == Some("SELL") {
-                        "false"
-                    } else {
-                        "true"
-                    }
-                ),
-                "        double price = isBuy ? SymbolInfoDouble(_Symbol, SYMBOL_ASK) : SymbolInfoDouble(_Symbol, SYMBOL_BID);".to_string(),
-                "        double sl = CalculateSL(isBuy);".to_string(),
-                "        double tp = CalculateTP(isBuy);".to_string(),
-                "        if(isBuy)".to_string(),
-                "            trade.Buy(LotSize, _Symbol, price, sl, tp, \"SmartTrade Generated Entry\");".to_string(),
-                "        else".to_string(),
-                "            trade.Sell(LotSize, _Symbol, price, sl, tp, \"SmartTrade Generated Entry\");".to_string(),
-                "    }".to_string(),
-            ]);
-        }
-        _ => {
-            lines.push("    // Skeleton-provided trading logic remains active below.".to_string());
-        }
-    }
-
-    lines.join("\n")
-}
-
-fn build_exit_logic(spec: &StrategySpec, skeleton_type: &str) -> String {
-    let mut lines = Vec::new();
-    if let Some(exit_condition) = &spec.exit_condition {
-        lines.push(format!(
-            "    // Requested exit condition: {}",
-            sanitize_comment(exit_condition)
-        ));
-    }
-    if lines.is_empty() {
-        lines.push("    // Exit logic supplied by the selected skeleton.".to_string());
-    } else if skeleton_type != "basic_ea" {
-        lines.push("    // Skeleton-provided exit management remains active below.".to_string());
-    }
-    lines.join("\n")
-}
-
-fn inject_skeleton(
-    strategy_name: &str,
-    skeleton_type: &str,
-    parameter_lines: &str,
-    entry_logic: &str,
-    exit_logic: &str,
-) -> Result<String, GenerationError> {
-    let template = skeleton_template(skeleton_type)
-        .ok_or_else(|| GenerationError::new(format!("Unknown skeleton `{skeleton_type}`")))?;
-
-    Ok(template
-        .replace("{{STRATEGY_NAME}}", strategy_name)
-        .replace("// {{PARAMETERS}}", parameter_lines)
-        .replace("// {{ENTRY_LOGIC}}", entry_logic)
-        .replace("// {{EXIT_LOGIC}}", exit_logic))
-}
-
-fn skeleton_template(skeleton_type: &str) -> Option<&'static str> {
-    match skeleton_type {
-        "basic_ea" => Some(BASIC_EA_TEMPLATE),
-        "breakout" => Some(BREAKOUT_TEMPLATE),
-        "grid" => Some(GRID_TEMPLATE),
-        "rsi_mean_reversion" => Some(RSI_MEAN_REVERSION_TEMPLATE),
-        "sma_crossover" => Some(SMA_CROSSOVER_TEMPLATE),
-        _ => None,
-    }
-}
-
-fn build_explanation(spec: &StrategySpec, skeleton_type: &str) -> String {
-    format!(
-        "Generated a {} strategy draft for {} on {} using the {} skeleton. Entry: {}. Exit: {}. Stop-loss: {}.",
-        spec.action.as_deref().unwrap_or("neutral").to_lowercase(),
-        spec.pair.as_deref().unwrap_or("the requested market"),
-        spec.timeframe.as_deref().unwrap_or("the requested timeframe"),
-        skeleton_type,
-        spec.entry_condition
-            .as_deref()
-            .unwrap_or("provided in the conversation"),
-        spec.exit_condition
-            .as_deref()
-            .unwrap_or("provided in the conversation"),
-        spec.stop_loss
-            .as_deref()
-            .unwrap_or("present in the skeleton defaults"),
-    )
-}
-
 fn sanitize_comment(value: &str) -> String {
     value.replace('\n', " ").replace('\r', " ").trim().to_string()
 }
@@ -1720,7 +1380,7 @@ fn issue(
 mod tests {
     use super::{
         classify_intent, compile_mql5, detect_ambiguity, extract_strategy_spec,
-        generate_strategy_code, save_strategy, search_knowledge_base, run_static_analysis,
+        save_strategy, search_knowledge_base, run_static_analysis,
         AmbiguityStatus, SaveStrategyRequest, SmartTradeToolExecutor, StrategyIntent,
     };
     use crate::conversation::ToolExecutor;
@@ -1806,40 +1466,6 @@ mod tests {
         assert!(result.message.contains("Maximum clarification rounds"));
     }
 
-    #[test]
-    fn generates_code_from_complete_sma_crossover_spec() {
-        let spec = extract_strategy_spec(
-            "Build a BUY EURUSD H1 strategy when 50 SMA crosses above 200 SMA with reverse cross exit and stop-loss 50 pips.",
-        );
-
-        let generated = generate_strategy_code(
-            "Build a BUY EURUSD H1 strategy when 50 SMA crosses above 200 SMA with reverse cross exit and stop-loss 50 pips.",
-            &spec,
-        )
-        .expect("strategy generation should succeed");
-
-        assert_eq!(generated.skeleton_type, "sma_crossover");
-        assert!(generated.code.contains("OnTick()"));
-        assert!(generated.code.contains("Requested entry condition"));
-        assert!(generated.code.contains("StrategyPair"));
-    }
-
-    #[test]
-    fn static_analysis_passes_for_generated_sma_crossover_code() {
-        let spec = extract_strategy_spec(
-            "Build a BUY EURUSD H1 strategy when 50 SMA crosses above 200 SMA with reverse cross exit and stop-loss 50 pips.",
-        );
-        let generated = generate_strategy_code(
-            "Build a BUY EURUSD H1 strategy when 50 SMA crosses above 200 SMA with reverse cross exit and stop-loss 50 pips.",
-            &spec,
-        )
-        .expect("strategy generation should succeed");
-
-        let analysis = run_static_analysis(&generated.code, 1);
-
-        assert!(analysis.passed, "analysis errors: {:?}", analysis.errors);
-        assert_eq!(analysis.error_count, 0);
-    }
 
     #[test]
     fn static_analysis_detects_structural_problems() {
@@ -1940,20 +1566,5 @@ mod tests {
         let detect_json: serde_json::Value =
             serde_json::from_str(&detect).expect("detect output should be valid json");
         assert_eq!(detect_json["status"], "INCOMPLETE");
-
-        let inject = executor
-            .execute(
-                "inject_skeleton",
-                &json!({
-                    "logic_code": "if(true) { Print(\"hi\"); }",
-                    "skeleton_type": "basic_ea",
-                    "strategy_name": "Injected"
-                })
-                .to_string(),
-            )
-            .expect("inject skeleton should succeed");
-        let inject_json: serde_json::Value =
-            serde_json::from_str(&inject).expect("inject output should be valid json");
-        assert_eq!(inject_json["success"], true);
     }
 }

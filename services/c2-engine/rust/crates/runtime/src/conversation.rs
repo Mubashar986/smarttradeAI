@@ -344,11 +344,19 @@ where
                                 true,
                             )
                         } else {
+                            tracing::info!(tool_name = %tool_name, "tool_executing");
+                            let start_time = std::time::Instant::now();
                             let (mut output, mut is_error) =
                                 match self.tool_executor.execute(&tool_name, &input) {
                                     Ok(output) => (output, false),
                                     Err(error) => (error.to_string(), true),
                                 };
+                            tracing::info!(
+                                tool_name = %tool_name,
+                                duration_ms = start_time.elapsed().as_millis(),
+                                is_error = is_error,
+                                "tool_completed"
+                            );
                             output =
                                 merge_hook_feedback(pre_hook_result.messages(), output, false);
 

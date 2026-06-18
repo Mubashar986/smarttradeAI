@@ -17,8 +17,8 @@ pub use config::{
     RuntimeConfig, RuntimeFeatureConfig, RuntimeHookConfig, RuntimePluginConfig,
 };
 pub use conversation::{
-    ApiClient, ApiRequest, AssistantEvent, ConversationRuntime, RuntimeError, StaticToolExecutor,
-    ToolError, ToolExecutor, TurnSummary,
+    ApiClient, ApiRequest, AssistantEvent, ConversationRuntime, PermissionMode, PermissionPolicy,
+    RuntimeError, StaticToolExecutor, ToolError, ToolExecutor, TurnSummary,
 };
 pub use hooks::{HookEvent, HookRunResult, HookRunner};
 pub use oauth_support::{
@@ -32,9 +32,8 @@ pub use prompt::{
 pub use session::{ContentBlock, ConversationMessage, MessageRole, Session, SessionError};
 pub use smarttrade_tools::{
     classify_intent, detect_ambiguity, extract_strategy_spec, AmbiguityResult, AmbiguityStatus,
-    generate_strategy_code, run_static_analysis, save_strategy, search_knowledge_base,
-    compile_mql5, inject_skeleton_tool, CompileResult, CompilerMessage, GeneratedStrategy,
-    GenerationError, InjectedSkeletonResult, IntentClassification, KnowledgeBaseMatch,
+    run_static_analysis, save_strategy, search_knowledge_base, compile_mql5, CompileResult,
+    CompilerMessage, GeneratedStrategy, GenerationError, IntentClassification, KnowledgeBaseMatch,
     KnowledgeBaseSearchResult, SaveStrategyRequest, SaveStrategyResult, SmartTradeToolConfig,
     SmartTradeToolExecutor, StaticAnalysisIssue, StaticAnalysisResult, StrategyIntent,
     StrategySpec, MAX_CLARIFICATION_ROUNDS, MAX_COMPILE_RETRIES, MAX_STATIC_RETRIES,

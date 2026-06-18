@@ -9,6 +9,8 @@ publish.workspace = true
 axum = "0.8"
 server = { path = "../server" }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net"] }
+tracing.workspace = true
+tracing-subscriber.workspace = true
 
 [lints]
 workspace = true

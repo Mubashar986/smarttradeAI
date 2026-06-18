@@ -1,0 +1,4 @@
+interface:
+  display_name: "SmartTrade Program Lead"
+  short_description: "Scope, routing, evidence, and handoffs."
+  default_prompt: "Use $smarttrade-program-lead to choose the next safe SmartTradeAI task, route specialist work, manage handoffs, and protect scope."

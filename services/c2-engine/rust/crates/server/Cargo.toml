@@ -6,6 +6,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+api = { path = "../api" }
 argon2.workspace = true
 async-stream = "0.3"
 axum = { version = "0.8", features = ["ws"] }
@@ -18,6 +19,7 @@ serde_json.workspace = true
 sqlx.workspace = true
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "net", "time"] }
 tower-http = { version = "0.6", features = ["cors"] }
+tracing.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]

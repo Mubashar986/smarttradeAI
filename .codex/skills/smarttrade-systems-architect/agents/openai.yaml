@@ -1,0 +1,4 @@
+interface:
+  display_name: "SmartTrade Systems Architect"
+  short_description: "Requirements, architecture, and interfaces."
+  default_prompt: "Use $smarttrade-systems-architect to clarify SmartTradeAI requirements, design architecture, define interfaces, update traceability, and prepare implementation handoffs."

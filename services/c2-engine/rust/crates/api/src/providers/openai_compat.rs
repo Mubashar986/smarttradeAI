@@ -19,6 +19,7 @@ pub const DEFAULT_OPENAI_BASE_URL: &str = "https://api.openai.com/v1";
 pub const DEFAULT_GROQ_BASE_URL: &str = "https://api.groq.com/openai/v1";
 pub const DEFAULT_GEMINI_BASE_URL: &str =
     "https://generativelanguage.googleapis.com/v1beta/openai";
+pub const DEFAULT_OPENROUTER_BASE_URL: &str = "https://openrouter.ai/api/v1";
 const REQUEST_ID_HEADER: &str = "request-id";
 const ALT_REQUEST_ID_HEADER: &str = "x-request-id";
 const GROQ_RESET_TOKENS_HEADER: &str = "x-ratelimit-reset-tokens";
@@ -42,6 +43,7 @@ const XAI_ENV_VARS: &[&str] = &["XAI_API_KEY"];
 const OPENAI_ENV_VARS: &[&str] = &["OPENAI_API_KEY"];
 const GROQ_ENV_VARS: &[&str] = &["GROQ_API_KEY", "OPENAI_API_KEY"];
 const GEMINI_ENV_VARS: &[&str] = &["GEMINI_API_KEY"];
+const OPENROUTER_ENV_VARS: &[&str] = &["OPENROUTER_API_KEY"];
 
 impl OpenAiCompatConfig {
     #[must_use]
@@ -93,12 +95,25 @@ impl OpenAiCompatConfig {
     }
 
     #[must_use]
+    pub const fn openrouter() -> Self {
+        Self {
+            provider_name: "OpenRouter",
+            api_key_env: "OPENROUTER_API_KEY",
+            base_url_env: "OPENROUTER_BASE_URL",
+            default_base_url: DEFAULT_OPENROUTER_BASE_URL,
+            fallback_api_key_envs: &["OPENAI_API_KEY"],
+            fallback_base_url_envs: &[],
+        }
+    }
+
+    #[must_use]
     pub fn credential_env_vars(self) -> &'static [&'static str] {
         match self.provider_name {
             "xAI" => XAI_ENV_VARS,
             "OpenAI" => OPENAI_ENV_VARS,
             "Groq" => GROQ_ENV_VARS,
             "Gemini" => GEMINI_ENV_VARS,
+            "OpenRouter" => OPENROUTER_ENV_VARS,
             _ => &[],
         }
     }
@@ -708,8 +723,21 @@ fn build_chat_completion_request(request: &MessageRequest) -> Value {
         "stream": request.stream,
     });
 
+    if should_use_max_completion_tokens() {
+        payload["max_completion_tokens"] = json!(request.max_tokens);
+        if let Some(payload_object) = payload.as_object_mut() {
+            payload_object.remove("max_tokens");
+        }
+    }
+
     if let Some(temperature) = request.temperature {
         payload["temperature"] = json!(temperature);
+    }
+    if let Some(top_p) = read_optional_env_f32("LLM_TOP_P") {
+        payload["top_p"] = json!(top_p);
+    }
+    if let Ok(Some(reasoning_effort)) = read_env_non_empty("LLM_REASONING_EFFORT") {
+        payload["reasoning_effort"] = json!(reasoning_effort);
     }
 
     if let Some(tools) = &request.tools {
@@ -721,6 +749,21 @@ fn build_chat_completion_request(request: &MessageRequest) -> Value {
     }
 
     payload
+}
+
+fn should_use_max_completion_tokens() -> bool {
+    std::env::var("LLM_TOKEN_LIMIT_FIELD")
+        .map(|value| value.eq_ignore_ascii_case("max_completion_tokens"))
+        .unwrap_or(false)
+        || std::env::var("LLM_PROVIDER")
+            .map(|value| value.eq_ignore_ascii_case("groq"))
+            .unwrap_or(false)
+}
+
+fn read_optional_env_f32(key: &str) -> Option<f32> {
+    std::env::var(key)
+        .ok()
+        .and_then(|value| value.parse::<f32>().ok())
 }
 
 fn translate_message(message: &InputMessage) -> Vec<Value> {
