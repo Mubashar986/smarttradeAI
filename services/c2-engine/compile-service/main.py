@@ -200,22 +200,18 @@ def compile_endpoint(request: CompileRequest) -> CompileResponse:
         )
 
     # Step 4: Run MetaEditor.
-    # IMPORTANT: We build the command as a single STRING, not a list.
-    # On Windows, subprocess.run(list) uses list2cmdline() which backslash-escapes
-    # embedded double quotes. MetaEditor does NOT understand backslash-escaped quotes.
-    # Passing a string sends the command line to CreateProcessW verbatim.
     include_dir = _include_dir()
 
-    cmd_str = (
-        f'"{metaeditor}" '
-        f'/compile:"{mq5_path}" '
-        f'/log:"{log_path}" '
-        f'/inc:"{include_dir}"'
-    )
+    cmd_args = [
+        metaeditor,
+        f"/compile:{mq5_path}",
+        f"/log:{log_path}",
+        f"/inc:{include_dir}",
+    ]
 
     logger.info("=" * 60)
     logger.info("COMPILE REQUEST for session: %s", request.session_id)
-    logger.info("Command: %s", cmd_str)
+    logger.info("Command: %s", subprocess.list2cmdline(cmd_args))
     logger.info("mq5_path exists: %s", os.path.isfile(mq5_path))
     logger.info("mq5_path: %s", mq5_path)
     logger.info("log_path: %s", log_path)
@@ -226,10 +222,11 @@ def compile_endpoint(request: CompileRequest) -> CompileResponse:
     stdout_text = ""
     try:
         result = subprocess.run(
-            cmd_str,               # <-- STRING, not list
+            cmd_args,
             capture_output=True,
             text=False,            # Capture raw bytes
             timeout=COMPILE_TIMEOUT_SECONDS,
+            shell=False,
         )
         # Decode byte outputs safely
         stderr_text = result.stderr.decode("utf-8", errors="replace") if result.stderr else ""
@@ -264,7 +261,7 @@ def compile_endpoint(request: CompileRequest) -> CompileResponse:
                     )
                 ],
                 source="metaeditor",
-                note=f"Command was: {cmd_str}",
+                note=f"Command was: {subprocess.list2cmdline(cmd_args)}",
             )
     except subprocess.TimeoutExpired:
         return CompileResponse(
