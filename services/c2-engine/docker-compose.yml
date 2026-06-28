@@ -46,6 +46,8 @@ services:
       - PINECONE_API_KEY=${PINECONE_API_KEY:-}
       - PINECONE_INDEX=${PINECONE_INDEX:-mql5-docs}
       - PINECONE_NAMESPACE=${PINECONE_NAMESPACE:-mql5_templates}
+      # --- C3 / Compile Service ---
+      - C3_COMPILER_URL=${C3_COMPILER_URL:-http://host.docker.internal:8080/compile}
     depends_on:
       redis:
         condition: service_healthy

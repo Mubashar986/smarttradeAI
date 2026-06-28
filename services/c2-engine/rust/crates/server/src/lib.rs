@@ -1,5 +1,6 @@
 mod llm_bridge;
 mod middleware;
+mod mql5_extractor;
 mod routes;
 mod state;
 

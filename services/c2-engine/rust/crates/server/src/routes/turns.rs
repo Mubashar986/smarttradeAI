@@ -2,19 +2,26 @@ use axum::extract::{Extension, Path, State};
 use axum::http::StatusCode;
 use axum::Json;
 use runtime::{
-    ContentBlock, ConversationMessage, ConversationRuntime, PermissionMode, PermissionPolicy,
-    SmartTradeToolConfig, SmartTradeToolExecutor,
+    compile_mql5_async, save_strategy_async, CompileResult, ContentBlock, ConversationMessage,
+    ConversationRuntime, PermissionMode, PermissionPolicy, SaveStrategyRequest, Session,
+    SmartTradeToolConfig, SmartTradeToolExecutor, TokenUsage,
 };
 use serde_json::json;
 use tokio::sync::mpsc;
+use tokio::time::{timeout, Duration};
 
 use crate::llm_bridge::LlmBridge;
+use crate::mql5_extractor::extract_mql5_code;
 use crate::middleware::auth::AuthClaims;
 use crate::state::{
     AppState, ApiResult, ErrorResponse, SendMessageRequest, SessionEvent, SessionId,
     SubmitTurnRequest, SubmitTurnResponse, TaskId, TaskResultType, TaskStatus, TaskStatusResponse,
     TurnContext, TurnMessageType, TurnRequest, TurnTask, not_found,
 };
+
+const DEFAULT_MAX_TURN_ITERATIONS: usize = 8;
+const MAX_CODEGEN_COMPILE_ATTEMPTS: usize = 2;
+const DEFAULT_PROCESS_TURN_TIMEOUT_SECS: u64 = 900;
 
 pub(crate) async fn send_message(
     State(state): State<AppState>,
@@ -155,7 +162,18 @@ pub async fn run_turn_worker(state: AppState, mut turn_rx: mpsc::UnboundedReceiv
 
         let watchdog_state = state.clone();
         let handle = tokio::spawn(async move {
-            if let Err(error) = process_turn(state.clone(), request.clone()).await {
+            let turn_timeout = process_turn_timeout();
+            let result = timeout(turn_timeout, process_turn(state.clone(), request.clone()))
+                .await
+                .map_err(|_| {
+                    format!(
+                        "turn processing timed out after {} seconds",
+                        turn_timeout.as_secs()
+                    )
+                })
+                .and_then(|result| result);
+
+            if let Err(error) = result {
                 tracing::error!(
                     task_id = %request.task_id,
                     session_id = %request.session_id,
@@ -207,7 +225,16 @@ pub async fn run_turn_worker(state: AppState, mut turn_rx: mpsc::UnboundedReceiv
                     SessionEvent::Error {
                         session_id: session_id.clone(),
                         task_id: task_id.clone(),
-                        message: panic_msg,
+                        message: panic_msg.clone(),
+                    },
+                )
+                .await;
+                broadcast_event(
+                    &watchdog_state,
+                    &session_id,
+                    SessionEvent::TurnError {
+                        session_id: session_id.clone(),
+                        error: panic_msg,
                     },
                 )
                 .await;
@@ -259,17 +286,7 @@ async fn process_turn(state: AppState, request: TurnRequest) -> Result<(), Strin
     let policy = PermissionPolicy::new(PermissionMode::Allow);
 
     // 5. System prompt.
-    let system_prompt = vec![
-        "You are an expert MQL5 trading strategy assistant. You help users design, \
-         build, and refine automated trading strategies (Expert Advisors) for \
-         MetaTrader 5. Use the provided tools to classify intents, check for \
-         missing details, search the knowledge base, run static analysis, \
-         compile, and save strategies. When generating a strategy, you MUST \
-         write the COMPLETE MQL5 code from scratch, including all necessary \
-         #property tags, OnInit(), OnDeinit(), and OnTick() event handlers. \
-         Do not rely on any external templates or skeletons."
-            .to_string(),
-    ];
+    let system_prompt = smarttrade_system_prompt();
 
     // 6. Construct and run the conversation runtime.
     broadcast_status(
@@ -287,7 +304,8 @@ async fn process_turn(state: AppState, request: TurnRequest) -> Result<(), Strin
         executor,
         policy,
         system_prompt,
-    );
+    )
+    .with_max_iterations(max_turn_iterations());
 
     let (summary_result, mut runtime) = tokio::task::spawn_blocking(move || {
         let result = runtime.run_turn_headless();
@@ -316,7 +334,7 @@ async fn process_turn(state: AppState, request: TurnRequest) -> Result<(), Strin
     );
 
     // 7. Extract the response text from the last assistant message.
-    let response_text = summary
+    let mut response_text = summary
         .assistant_messages
         .last()
         .map(|msg| {
@@ -330,8 +348,204 @@ async fn process_turn(state: AppState, request: TurnRequest) -> Result<(), Strin
                 .join("\n")
         })
         .unwrap_or_default();
+    let mut total_iterations = summary.iterations;
+    let mut total_usage = summary.usage;
 
-    // 8. Write the updated session back to AppState.
+    // 7a. Extract MQL5 code block from the assistant response.
+    let mql5_code = extract_mql5_code(&response_text);
+    let has_code = mql5_code.is_some();
+    let mut final_code = mql5_code.clone();
+    if let Some(ref code) = mql5_code {
+        broadcast_event(
+            &state,
+            &request.session_id,
+            SessionEvent::DraftGeneratedCode {
+                session_id: request.session_id.clone(),
+                task_id: request.task_id.clone(),
+                content: code.clone(),
+            },
+        )
+        .await;
+    }
+
+    // 8. Compile/fix loop (only if code was extracted). The LLM generates code;
+    // the server owns compilation so provider tool loops cannot retry forever.
+    let mut compile_status = "NOT_ATTEMPTED";
+    let mut strategy_id: Option<String> = None;
+    let mut compile_errors: Vec<String> = Vec::new();
+
+    if let Some(ref code) = mql5_code {
+        let mut current_code = code.clone();
+
+        for attempt in 1..=MAX_CODEGEN_COMPILE_ATTEMPTS {
+            broadcast_status(
+                &state,
+                &request.session_id,
+                &request.task_id,
+                "compiling",
+                &format!("compile attempt {attempt}/{MAX_CODEGEN_COMPILE_ATTEMPTS}"),
+            )
+            .await;
+
+            let result = compile_mql5_async(&current_code, &request.session_id, attempt as u64)
+                .await;
+            compile_errors = compile_messages(&result);
+
+            if result.source == "stub" {
+                compile_status = "STUB_SKIPPED";
+                break;
+            }
+
+            if compiler_unavailable(&result) {
+                compile_status = "COMPILER_UNAVAILABLE";
+                break;
+            }
+
+            if result.success {
+                compile_status = "COMPILED";
+                break;
+            }
+
+            if attempt >= MAX_CODEGEN_COMPILE_ATTEMPTS {
+                compile_status = "FAILED";
+                break;
+            }
+
+            // Build feedback and add to session
+            let feedback = build_compile_feedback(&compile_errors);
+
+            // Consume runtime into session, add feedback, rebuild runtime
+            let mut session = runtime.into_session();
+            session.messages.push(ConversationMessage::user_text(feedback));
+            runtime = build_runtime_from_session(session, &state);
+
+            // Re-run conversation
+            broadcast_status(
+                &state,
+                &request.session_id,
+                &request.task_id,
+                "llm_turn",
+                "asking LLM to fix compilation errors",
+            )
+            .await;
+
+            let (retry_result, retry_runtime) = tokio::task::spawn_blocking(move || {
+                let result = runtime.run_turn_headless();
+                (result, runtime)
+            })
+            .await
+            .map_err(|e| format!("retry turn loop panicked: {e}"))?;
+
+            let retry_summary = retry_result.map_err(|e| {
+                tracing::error!(
+                    task_id = %request.task_id,
+                    error = %e,
+                    "retry LLM turn failed"
+                );
+                format!("retry LLM turn failed: {e}")
+            })?;
+
+            runtime = retry_runtime;
+
+            tracing::info!(
+                task_id = %request.task_id,
+                iterations = retry_summary.iterations,
+                "retry LLM turn completed"
+            );
+            total_iterations += retry_summary.iterations;
+            add_usage(&mut total_usage, retry_summary.usage);
+
+            // Extract new code from retry
+            let retry_text = retry_summary
+                .assistant_messages
+                .last()
+                .map(|msg| {
+                    msg.blocks
+                        .iter()
+                        .filter_map(|block| match block {
+                            ContentBlock::Text { text } => Some(text.as_str()),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                })
+                .unwrap_or_default();
+
+            if let Some(new_code) = extract_mql5_code(&retry_text) {
+                current_code = new_code.clone();
+                final_code = Some(new_code);
+                response_text = retry_text;
+                broadcast_event(
+                    &state,
+                    &request.session_id,
+                    SessionEvent::DraftGeneratedCode {
+                        session_id: request.session_id.clone(),
+                        task_id: request.task_id.clone(),
+                        content: current_code.clone(),
+                    },
+                )
+                .await;
+                tracing::info!(task_id = %request.task_id, "retry extracted new MQL5 code");
+            } else {
+                compile_status = "FAILED";
+                break;
+            }
+        }
+
+        // Save strategy on successful compilation
+        if compile_status == "COMPILED" {
+            broadcast_status(
+                &state,
+                &request.session_id,
+                &request.task_id,
+                "saving",
+                "saving compiled strategy",
+            )
+            .await;
+
+            let save_request = SaveStrategyRequest {
+                strategy_name: "Generated Strategy".to_string(),
+                code: current_code.clone(),
+                explanation: response_text.chars().take(200).collect::<String>(),
+                status: "COMPILED".to_string(),
+                session_id: request.session_id.clone(),
+                user_id: request.context.user_id.clone().unwrap_or_default(),
+                pair: "".to_string(),
+                timeframe: "".to_string(),
+            };
+
+            let save_result = save_strategy_async(&save_request).await;
+            if save_result.success {
+                strategy_id = save_result.strategy_id.clone();
+                tracing::info!(
+                    task_id = %request.task_id,
+                    strategy_id = %strategy_id.as_deref().unwrap_or("unknown"),
+                    "strategy saved successfully"
+                );
+            } else {
+                tracing::warn!(
+                    task_id = %request.task_id,
+                    error = %save_result.error.as_deref().unwrap_or("unknown"),
+                    "strategy save failed"
+                );
+            }
+        }
+
+        if matches!(compile_status, "COMPILED" | "STUB_SKIPPED") {
+            broadcast_event(
+                &state,
+                &request.session_id,
+                SessionEvent::GeneratedCode {
+                    session_id: request.session_id.clone(),
+                    task_id: request.task_id.clone(),
+                    content: current_code,
+                },
+            )
+            .await;
+        }
+    }
+
+    // 9. Write the updated session back to AppState.
     let updated_session = runtime.into_session();
     {
         let mut sessions = state.sessions.write().await;
@@ -340,12 +554,10 @@ async fn process_turn(state: AppState, request: TurnRequest) -> Result<(), Strin
         }
     }
 
-    // 9. Broadcast the assistant reply.
+    // 10. Broadcast the assistant reply.
     let reply = ConversationMessage::assistant(vec![ContentBlock::Text {
         text: response_text.clone(),
     }]);
-    // Note: we don't push to session.conversation again — it's already there
-    // from the runtime. We only broadcast the event for SSE listeners.
     {
         let sessions = state.sessions.read().await;
         if let Some(session) = sessions.get(&request.session_id) {
@@ -356,40 +568,67 @@ async fn process_turn(state: AppState, request: TurnRequest) -> Result<(), Strin
         }
     }
 
-    // 10. Complete the task.
+    // 11. Complete the task.
+    let mut payload = json!({
+        "status": "completed",
+        "iterations": total_iterations,
+        "usage": {
+            "input_tokens": total_usage.input_tokens,
+            "output_tokens": total_usage.output_tokens,
+            "cache_creation_input_tokens": total_usage.cache_creation_input_tokens,
+            "cache_read_input_tokens": total_usage.cache_read_input_tokens,
+        },
+        "response_preview": response_text.chars().take(200).collect::<String>(),
+        "has_code": has_code,
+        "compile_status": compile_status,
+    });
+    if let Some(code) = final_code {
+        payload["code"] = json!(code);
+    }
+    if let Some(id) = &strategy_id {
+        payload["strategy_id"] = json!(id);
+    }
+    if !compile_errors.is_empty() && matches!(compile_status, "FAILED" | "COMPILER_UNAVAILABLE") {
+        payload["compile_errors"] = json!(compile_errors);
+    }
     state
         .complete_task(
             &request.task_id,
             TaskResultType::Generation,
-            json!({
-                "status": "completed",
-                "iterations": summary.iterations,
-                "usage": {
-                    "input_tokens": summary.usage.input_tokens,
-                    "output_tokens": summary.usage.output_tokens,
-                    "cache_creation_input_tokens": summary.usage.cache_creation_input_tokens,
-                    "cache_read_input_tokens": summary.usage.cache_read_input_tokens,
-                },
-                "response_preview": response_text.chars().take(200).collect::<String>(),
-            }),
+            payload,
         )
         .await;
+
+    // 12. Broadcast final status.
+    let final_status = match compile_status {
+        "COMPILED" => "compilation_complete",
+        "FAILED" => "compilation_failed",
+        "STUB_SKIPPED" => "compilation_stub",
+        "COMPILER_UNAVAILABLE" => "compilation_unavailable",
+        _ => "generation_complete",
+    };
     broadcast_status(
         &state,
         &request.session_id,
         &request.task_id,
-        "generation_complete",
-        "LLM conversation turn finished",
+        final_status,
+        match compile_status {
+            "COMPILED" => "strategy compiled and saved",
+            "FAILED" => "compilation failed after all retries",
+            "STUB_SKIPPED" => "compilation skipped (stub mode)",
+            "COMPILER_UNAVAILABLE" => "compiler service unavailable",
+            _ => "LLM conversation turn finished",
+        },
     )
     .await;
 
-    // 11. Broadcast turn complete.
+    // 13. Broadcast turn complete.
     broadcast_event(
         &state,
         &request.session_id,
         SessionEvent::TurnComplete {
             session_id: request.session_id.clone(),
-            iterations: summary.iterations,
+            iterations: total_iterations,
         },
     )
     .await;
@@ -397,13 +636,12 @@ async fn process_turn(state: AppState, request: TurnRequest) -> Result<(), Strin
     tracing::info!(
         task_id = %request.task_id,
         session_id = %request.session_id,
+        compile_status = %compile_status,
         "turn processing complete"
     );
 
     Ok(())
 }
-
-
 
 #[allow(dead_code)]
 async fn append_assistant_reply(
@@ -454,4 +692,136 @@ async fn broadcast_event(state: &AppState, session_id: &str, event: SessionEvent
     if let Some(sender) = sender {
         let _ = sender.send(event);
     }
+}
+
+/// Build a feedback message from compiler diagnostics to send back to the LLM.
+fn build_compile_feedback(errors: &[String]) -> String {
+    let mut msg = String::from(
+        "The MQL5 compiler reported the following diagnostics:\n\n",
+    );
+    for err in errors {
+        msg.push_str(&format!("- {err}\n"));
+    }
+    msg.push_str(
+        "\nPlease fix these diagnostics and regenerate the complete MQL5 code \
+         with all necessary #property tags, OnInit(), OnDeinit(), and OnTick() handlers.",
+    );
+    msg
+}
+
+/// Build a new ConversationRuntime from an existing session for retry purposes.
+fn build_runtime_from_session(
+    session: Session,
+    state: &AppState,
+) -> ConversationRuntime<LlmBridge, SmartTradeToolExecutor> {
+    let max_tokens = api::max_tokens_for_model(&state.llm_model);
+    let bridge = LlmBridge::new(state.provider.clone(), state.llm_model.clone(), max_tokens);
+    let executor = SmartTradeToolExecutor::with_config(SmartTradeToolConfig::from_env());
+    let policy = PermissionPolicy::new(PermissionMode::Allow);
+    ConversationRuntime::new(session, bridge, executor, policy, smarttrade_system_prompt())
+        .with_max_iterations(max_turn_iterations())
+}
+
+fn smarttrade_system_prompt() -> Vec<String> {
+    vec![
+        "You are an expert MQL5 trading strategy assistant. You help users design, \
+         build, and refine automated trading strategies (Expert Advisors) for \
+         MetaTrader 5. Use the provided tools to classify intents, check for \
+         missing details, search the knowledge base, and run static analysis. \
+         If you already classified the intent or detected parameters, skip calling \
+         classify_intent and detect_ambiguity tools on compilation retries. Focus \
+         only on correcting the compiler errors. \
+         When generating a strategy, you MUST \
+         write the COMPLETE MQL5 code from scratch, including all necessary \
+         #property tags, OnInit(), OnDeinit(), and OnTick() event handlers. \
+         Use MQL5-native market data and indicator-handle patterns: SymbolInfoDouble \
+         for bid/ask, CopyRates/CopyBuffer for time-series and indicators, CTrade or \
+         MqlTradeRequest for orders, and never MQL4 globals or arrays such as Bid, Ask, \
+         Time[0], Open[], Close[], MarketInfo(), or shifted direct indicator calls. \
+         Return final source in a fenced ```mql5 code block. The server will \
+         compile and save the strategy after your response, so do not attempt \
+         to compile or persist it through tools. Do not rely on any external \
+         templates or skeletons."
+            .to_string(),
+    ]
+}
+
+fn max_turn_iterations() -> usize {
+    std::env::var("CLAW_MAX_TURN_ITERATIONS")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .filter(|value| *value > 0)
+        .unwrap_or(DEFAULT_MAX_TURN_ITERATIONS)
+}
+
+fn process_turn_timeout() -> Duration {
+    Duration::from_secs(
+        std::env::var("PROCESS_TURN_TIMEOUT_SECS")
+            .ok()
+            .and_then(|value| value.parse::<u64>().ok())
+            .filter(|value| *value > 0)
+            .unwrap_or(DEFAULT_PROCESS_TURN_TIMEOUT_SECS),
+    )
+}
+
+fn compile_messages(result: &CompileResult) -> Vec<String> {
+    let mut messages = result
+        .errors
+        .iter()
+        .map(|error| error.message.clone())
+        .collect::<Vec<_>>();
+
+    if messages.is_empty() {
+        messages.extend(
+            result
+                .warnings
+                .iter()
+                .map(|warning| format!("warning: {}", warning.message)),
+        );
+    }
+    if messages.is_empty() {
+        if let Some(message) = &result.message {
+            messages.push(message.clone());
+        }
+    }
+    if messages.is_empty() {
+        if let Some(note) = &result.note {
+            messages.push(note.clone());
+        }
+    }
+    if messages.is_empty() {
+        messages.push(format!(
+            "Compiler returned status {} from source {} without detailed diagnostics.",
+            result.status.as_deref().unwrap_or("UNKNOWN"),
+            result.source
+        ));
+    }
+
+    messages
+}
+
+fn compiler_unavailable(result: &CompileResult) -> bool {
+    result.source == "c3_error"
+        || matches!(
+            result.status.as_deref(),
+            Some(
+                "METAEDITOR_NOT_FOUND"
+                    | "DIRECTORY_CREATE_FAILED"
+                    | "FILE_WRITE_FAILED"
+                    | "ARTIFACT_MISSING"
+                    | "TIMEOUT"
+                    | "SUBPROCESS_FAILED"
+            )
+        )
+}
+
+fn add_usage(total: &mut TokenUsage, next: TokenUsage) {
+    total.input_tokens = total.input_tokens.saturating_add(next.input_tokens);
+    total.output_tokens = total.output_tokens.saturating_add(next.output_tokens);
+    total.cache_creation_input_tokens = total
+        .cache_creation_input_tokens
+        .saturating_add(next.cache_creation_input_tokens);
+    total.cache_read_input_tokens = total
+        .cache_read_input_tokens
+        .saturating_add(next.cache_read_input_tokens);
 }

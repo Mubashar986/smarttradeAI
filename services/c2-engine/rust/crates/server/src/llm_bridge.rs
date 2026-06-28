@@ -488,42 +488,21 @@ fn tool_definitions() -> Vec<ToolDefinition> {
                 "required": ["code"]
             }),
         },
-        ToolDefinition {
-            name: "compile_mql5".to_string(),
-            description: Some(
-                "Compile MQL5 source code using the remote compiler service. Returns \
-                 compiler warnings and errors."
-                    .to_string(),
-            ),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "code": { "type": "string", "description": "MQL5 source code to compile" },
-                    "session_id": { "type": "string", "description": "Current session ID" }
-                },
-                "required": ["code"]
-            }),
-        },
-        ToolDefinition {
-            name: "save_strategy".to_string(),
-            description: Some(
-                "Persist a finished strategy to disk. Saves the .mq5 file and metadata."
-                    .to_string(),
-            ),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "strategy_name": { "type": "string", "description": "Name of the strategy" },
-                    "code": { "type": "string", "description": "Final MQL5 source code" },
-                    "explanation": { "type": "string", "description": "Human-readable explanation" },
-                    "status": { "type": "string", "description": "Status, e.g. draft or final" },
-                    "session_id": { "type": "string", "description": "Session ID" },
-                    "user_id": { "type": "string", "description": "User ID" },
-                    "pair": { "type": "string", "description": "Trading pair" },
-                    "timeframe": { "type": "string", "description": "Chart timeframe" }
-                },
-                "required": ["strategy_name", "code", "explanation", "status", "session_id", "user_id", "pair", "timeframe"]
-            }),
-        },
     ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::tool_definitions;
+
+    #[test]
+    fn server_owned_tools_are_not_exposed_to_llm() {
+        let tool_names = tool_definitions()
+            .into_iter()
+            .map(|tool| tool.name)
+            .collect::<Vec<_>>();
+
+        assert!(!tool_names.iter().any(|name| name == "compile_mql5"));
+        assert!(!tool_names.iter().any(|name| name == "save_strategy"));
+    }
 }

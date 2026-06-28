@@ -1,4 +1,0 @@
-interface:
-  display_name: "SmartTrade AI Engineer"
-  short_description: "LLM reliability, evals, schemas, and trading-code safety."
-  default_prompt: "Use $smarttrade-ai-engineer to design, implement, or verify SmartTradeAI AI-engine workflows: trader-intent extraction, StrategySpec schemas, prompt/tool contracts, evals, safety checks, MQL5 generation boundaries, and handoffs."

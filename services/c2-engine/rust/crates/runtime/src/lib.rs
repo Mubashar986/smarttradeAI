@@ -32,11 +32,12 @@ pub use prompt::{
 pub use session::{ContentBlock, ConversationMessage, MessageRole, Session, SessionError};
 pub use smarttrade_tools::{
     classify_intent, detect_ambiguity, extract_strategy_spec, AmbiguityResult, AmbiguityStatus,
-    run_static_analysis, save_strategy, search_knowledge_base, compile_mql5, CompileResult,
-    CompilerMessage, GeneratedStrategy, GenerationError, IntentClassification, KnowledgeBaseMatch,
-    KnowledgeBaseSearchResult, SaveStrategyRequest, SaveStrategyResult, SmartTradeToolConfig,
-    SmartTradeToolExecutor, StaticAnalysisIssue, StaticAnalysisResult, StrategyIntent,
-    StrategySpec, MAX_CLARIFICATION_ROUNDS, MAX_COMPILE_RETRIES, MAX_STATIC_RETRIES,
+    compile_mql5, compile_mql5_async, run_static_analysis, save_strategy, save_strategy_async,
+    search_knowledge_base, CompileResult, CompilerMessage, GeneratedStrategy, GenerationError,
+    IntentClassification, KnowledgeBaseMatch, KnowledgeBaseSearchResult, SaveStrategyRequest,
+    SaveStrategyResult, SmartTradeToolConfig, SmartTradeToolExecutor, StaticAnalysisIssue,
+    StaticAnalysisResult, StrategyIntent, StrategySpec, MAX_CLARIFICATION_ROUNDS,
+    MAX_COMPILE_RETRIES, MAX_STATIC_RETRIES,
 };
 pub use usage::{
     format_usd, pricing_for_model, ModelPricing, TokenUsage, UsageCostEstimate, UsageTracker,
