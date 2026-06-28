@@ -28,8 +28,8 @@ const MQL5_STRONG_INDICATORS: &[&str] = &[
 
 fn mql5_fenced_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    // Catch ```mql5, ```mq5, ```mql4, ```mq4
-    RE.get_or_init(|| Regex::new(r"(?s)```(?:mql5|mq5|mql4|mq4)\s*\n?(.*?)\n?\s*```").unwrap())
+    // Catch ```mql5, ```mq5
+    RE.get_or_init(|| Regex::new(r"(?s)```(?:mql5|mq5)\s*\n?(.*?)\n?\s*```").unwrap())
 }
 
 fn generic_fenced_re() -> &'static Regex {
@@ -139,6 +139,24 @@ mod tests {
     fn test_mql5_fenced_block() {
         let input = "```mql5\nvoid OnTick(){}\n```";
         assert_eq!(extract_mql5_code(input), Some("void OnTick(){}".to_string()));
+    }
+
+    #[test]
+    fn test_mq5_fenced_block() {
+        let input = "```mq5\nvoid OnTick(){}\n```";
+        assert_eq!(extract_mql5_code(input), Some("void OnTick(){}".to_string()));
+    }
+
+    #[test]
+    fn test_mql4_fenced_block_is_ignored() {
+        let input = "```mql4\nvoid OnTick(){}\n```";
+        assert_eq!(extract_mql5_code(input), None);
+    }
+
+    #[test]
+    fn test_mq4_fenced_block_is_ignored() {
+        let input = "```mq4\nvoid OnTick(){}\n```";
+        assert_eq!(extract_mql5_code(input), None);
     }
 
     #[test]

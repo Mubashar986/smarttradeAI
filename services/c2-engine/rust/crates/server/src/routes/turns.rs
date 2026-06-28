@@ -771,14 +771,13 @@ fn compile_messages(result: &CompileResult) -> Vec<String> {
         .map(|error| error.message.clone())
         .collect::<Vec<_>>();
 
-    if messages.is_empty() {
-        messages.extend(
-            result
-                .warnings
-                .iter()
-                .map(|warning| format!("warning: {}", warning.message)),
-        );
-    }
+    messages.extend(
+        result
+            .warnings
+            .iter()
+            .map(|warning| format!("warning: {}", warning.message)),
+    );
+
     if messages.is_empty() {
         if let Some(message) = &result.message {
             messages.push(message.clone());
@@ -808,11 +807,103 @@ fn compiler_unavailable(result: &CompileResult) -> bool {
                 "METAEDITOR_NOT_FOUND"
                     | "DIRECTORY_CREATE_FAILED"
                     | "FILE_WRITE_FAILED"
-                    | "ARTIFACT_MISSING"
                     | "TIMEOUT"
                     | "SUBPROCESS_FAILED"
             )
         )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{compile_messages, compiler_unavailable};
+    use runtime::{CompileResult, CompilerMessage};
+
+    fn compile_result(
+        status: Option<&str>,
+        errors: Vec<&str>,
+        warnings: Vec<&str>,
+        message: Option<&str>,
+        note: Option<&str>,
+    ) -> CompileResult {
+        CompileResult {
+            success: false,
+            status: status.map(ToOwned::to_owned),
+            retry: 1,
+            max_retries: Some(2),
+            errors: errors
+                .into_iter()
+                .map(|message| CompilerMessage {
+                    message: message.to_string(),
+                })
+                .collect(),
+            warnings: warnings
+                .into_iter()
+                .map(|message| CompilerMessage {
+                    message: message.to_string(),
+                })
+                .collect(),
+            source: "metaeditor".to_string(),
+            note: note.map(ToOwned::to_owned),
+            message: message.map(ToOwned::to_owned),
+            ex5_base64: None,
+        }
+    }
+
+    #[test]
+    fn compile_messages_includes_warnings_with_errors() {
+        let result = compile_result(
+            Some("COMPILE_FAILED"),
+            vec!["missing semicolon"],
+            vec!["unused variable"],
+            None,
+            None,
+        );
+
+        assert_eq!(
+            compile_messages(&result),
+            vec!["missing semicolon", "warning: unused variable"]
+        );
+    }
+
+    #[test]
+    fn compile_messages_falls_back_when_diagnostics_are_empty() {
+        let result = compile_result(
+            Some("COMPILE_FAILED"),
+            Vec::new(),
+            Vec::new(),
+            Some("compile failed"),
+            Some("no log found"),
+        );
+
+        assert_eq!(compile_messages(&result), vec!["compile failed"]);
+    }
+
+    #[test]
+    fn artifact_missing_is_retryable_compile_failure() {
+        let result = compile_result(
+            Some("ARTIFACT_MISSING"),
+            vec!["Compiler reported success without a .ex5 artifact."],
+            Vec::new(),
+            None,
+            None,
+        );
+
+        assert!(!compiler_unavailable(&result));
+    }
+
+    #[test]
+    fn infrastructure_failures_remain_compiler_unavailable() {
+        for status in [
+            "METAEDITOR_NOT_FOUND",
+            "DIRECTORY_CREATE_FAILED",
+            "FILE_WRITE_FAILED",
+            "TIMEOUT",
+            "SUBPROCESS_FAILED",
+        ] {
+            let result = compile_result(Some(status), Vec::new(), Vec::new(), None, None);
+            assert!(compiler_unavailable(&result), "{status} should be unavailable");
+        }
+    }
 }
 
 fn add_usage(total: &mut TokenUsage, next: TokenUsage) {

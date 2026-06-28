@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /build
 COPY rust/ ./rust/
-COPY skeletons/ ./skeletons/
+
 
 WORKDIR /build/rust
 RUN cargo build --release --bin c2-engine
