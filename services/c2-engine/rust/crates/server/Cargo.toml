@@ -12,6 +12,7 @@ async-stream = "0.3"
 axum = { version = "0.8", features = ["ws"] }
 futures-util = "0.3"
 jsonwebtoken.workspace = true
+regex.workspace = true
 redis.workspace = true
 runtime = { path = "../runtime" }
 serde = { version = "1", features = ["derive"] }

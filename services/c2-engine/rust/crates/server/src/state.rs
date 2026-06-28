@@ -319,6 +319,11 @@ pub enum SessionEvent {
         passed: bool,
         details: JsonValue,
     },
+    DraftGeneratedCode {
+        session_id: SessionId,
+        task_id: TaskId,
+        content: String,
+    },
     GeneratedCode {
         session_id: SessionId,
         task_id: TaskId,
@@ -342,6 +347,7 @@ impl SessionEvent {
             Self::Status { .. } => "status",
             Self::ClarificationQuestion { .. } => "clarification_question",
             Self::ValidationFeedback { .. } => "validation_feedback",
+            Self::DraftGeneratedCode { .. } => "draft_generated_code",
             Self::GeneratedCode { .. } => "generated_code",
             Self::Error { .. } => "error",
         }

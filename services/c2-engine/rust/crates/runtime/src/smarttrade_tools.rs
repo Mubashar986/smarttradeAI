@@ -233,6 +233,8 @@ pub struct CompileResult {
     pub note: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ex5_base64: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -658,9 +660,10 @@ pub fn run_static_analysis(code: &str, retry: u64) -> StaticAnalysisResult {
     }
 
     let mut errors = Vec::new();
+    let analysis_code = strip_comments_and_strings(code);
 
-    let open_braces = code.matches('{').count();
-    let close_braces = code.matches('}').count();
+    let open_braces = analysis_code.matches('{').count();
+    let close_braces = analysis_code.matches('}').count();
     if open_braces != close_braces {
         errors.push(issue(
             "BRACKET_MISMATCH",
@@ -669,8 +672,8 @@ pub fn run_static_analysis(code: &str, retry: u64) -> StaticAnalysisResult {
         ));
     }
 
-    let open_parens = code.matches('(').count();
-    let close_parens = code.matches(')').count();
+    let open_parens = analysis_code.matches('(').count();
+    let close_parens = analysis_code.matches(')').count();
     if open_parens != close_parens {
         errors.push(issue(
             "PAREN_MISMATCH",
@@ -681,7 +684,7 @@ pub fn run_static_analysis(code: &str, retry: u64) -> StaticAnalysisResult {
 
     for function_name in ["OnInit", "OnDeinit", "OnTick"] {
         if !Regex::new(&format!(r"\b{function_name}\s*\("))
-            .is_ok_and(|regex| regex.is_match(code))
+            .is_ok_and(|regex| regex.is_match(&analysis_code))
         {
             errors.push(issue(
                 "MISSING_FUNCTION",
@@ -693,7 +696,7 @@ pub fn run_static_analysis(code: &str, retry: u64) -> StaticAnalysisResult {
 
     if let Some(captures) = Regex::new(r"(\w+)\s+OnInit\s*\(")
         .ok()
-        .and_then(|regex| regex.captures(code))
+        .and_then(|regex| regex.captures(&analysis_code))
     {
         if captures.get(1).is_some_and(|group| group.as_str() != "int") {
             errors.push(issue(
@@ -709,9 +712,10 @@ pub fn run_static_analysis(code: &str, retry: u64) -> StaticAnalysisResult {
         }
     }
 
-    let lower = code.to_lowercase();
-    let has_order_send =
-        code.contains("OrderSend") || code.contains("CTrade") || lower.contains("trade.");
+    let lower = analysis_code.to_lowercase();
+    let has_order_send = analysis_code.contains("OrderSend")
+        || analysis_code.contains("CTrade")
+        || lower.contains("trade.");
     let has_stop_loss = [
         "stoploss",
         "stop_loss",
@@ -746,7 +750,7 @@ pub fn run_static_analysis(code: &str, retry: u64) -> StaticAnalysisResult {
             "Use PositionsTotal() for open positions in MQL5",
         ),
     ] {
-        if code.contains(deprecated) {
+        if analysis_code.contains(deprecated) {
             errors.push(issue(
                 "DEPRECATED_FUNCTION",
                 "WARNING",
@@ -755,7 +759,7 @@ pub fn run_static_analysis(code: &str, retry: u64) -> StaticAnalysisResult {
         }
     }
 
-    if !code.contains("#property strict") && !code.contains("#property version") {
+    if !analysis_code.contains("#property strict") && !analysis_code.contains("#property version") {
         errors.push(issue(
             "MISSING_PROPERTY",
             "WARNING",
@@ -800,6 +804,16 @@ pub fn save_strategy(request: &SaveStrategyRequest) -> SaveStrategyResult {
     save_strategy_with_config(request, &SmartTradeToolConfig::from_env())
 }
 
+pub async fn compile_mql5_async(code: &str, session_id: &str, retry: u64) -> CompileResult {
+    let config = SmartTradeToolConfig::from_env();
+    compile_mql5_with_config_async(code, session_id, retry, &config).await
+}
+
+pub async fn save_strategy_async(request: &SaveStrategyRequest) -> SaveStrategyResult {
+    let config = SmartTradeToolConfig::from_env();
+    save_strategy_with_config_async(request, &config).await
+}
+
 fn search_knowledge_base_with_config(
     _query: &str,
     _top_k: usize,
@@ -826,6 +840,33 @@ fn compile_mql5_with_config(
     retry: u64,
     config: &SmartTradeToolConfig,
 ) -> CompileResult {
+    match tool_block_on(compile_mql5_with_config_async(
+        code, session_id, retry, config,
+    )) {
+        Ok(result) => result,
+        Err(error) => CompileResult {
+            success: false,
+            status: Some("RUNTIME_ERROR".to_string()),
+            retry,
+            max_retries: Some(MAX_COMPILE_RETRIES),
+            errors: vec![CompilerMessage {
+                message: format!("C3 compiler runtime error: {error}"),
+            }],
+            warnings: Vec::new(),
+            source: "c3_error".to_string(),
+            note: None,
+            message: None,
+            ex5_base64: None,
+        },
+    }
+}
+
+async fn compile_mql5_with_config_async(
+    code: &str,
+    session_id: &str,
+    retry: u64,
+    config: &SmartTradeToolConfig,
+) -> CompileResult {
     if retry > MAX_COMPILE_RETRIES {
         return CompileResult {
             success: false,
@@ -839,6 +880,7 @@ fn compile_mql5_with_config(
             message: Some(format!(
                 "Compilation failed after {MAX_COMPILE_RETRIES} attempts."
             )),
+            ex5_base64: None,
         };
     }
 
@@ -860,6 +902,7 @@ fn compile_mql5_with_config(
                     .to_string(),
             ),
             message: None,
+            ex5_base64: None,
         };
     };
 
@@ -869,31 +912,33 @@ fn compile_mql5_with_config(
         ("session_id", JsonValue::String(session_id.to_string())),
     ]);
 
-    match tool_block_on(async move {
-        let response = reqwest::Client::new()
-            .post(&compiler_url)
-            .json(&payload)
-            .send()
-            .await
-            .map_err(|error| error.to_string())?;
-        response
+    match reqwest::Client::new()
+        .post(&compiler_url)
+        .json(&payload)
+        .send()
+        .await
+        .map_err(|error| error.to_string())
+    {
+        Ok(response) => match response
             .json::<JsonValue>()
             .await
             .map_err(|error| error.to_string())
-    }) {
-        Ok(Ok(body)) => compile_result_from_json(body, retry),
-        Ok(Err(error)) => CompileResult {
-            success: false,
-            status: None,
-            retry,
-            max_retries: Some(MAX_COMPILE_RETRIES),
-            errors: vec![CompilerMessage {
-                message: format!("C3 compiler returned invalid JSON: {error}"),
-            }],
-            warnings: Vec::new(),
-            source: "c3_error".to_string(),
-            note: None,
-            message: None,
+        {
+            Ok(body) => compile_result_from_json(body, retry),
+            Err(error) => CompileResult {
+                success: false,
+                status: None,
+                retry,
+                max_retries: Some(MAX_COMPILE_RETRIES),
+                errors: vec![CompilerMessage {
+                    message: format!("C3 compiler returned invalid JSON: {error}"),
+                }],
+                warnings: Vec::new(),
+                source: "c3_error".to_string(),
+                note: None,
+                message: None,
+                ex5_base64: None,
+            },
         },
         Err(error) => CompileResult {
             success: false,
@@ -907,6 +952,7 @@ fn compile_mql5_with_config(
             source: "c3_error".to_string(),
             note: None,
             message: None,
+            ex5_base64: None,
         },
     }
 }
@@ -915,9 +961,26 @@ fn save_strategy_with_config(
     request: &SaveStrategyRequest,
     config: &SmartTradeToolConfig,
 ) -> SaveStrategyResult {
+    match tool_block_on(save_strategy_with_config_async(request, config)) {
+        Ok(result) => result,
+        Err(error) => SaveStrategyResult {
+            success: false,
+            strategy_id: None,
+            status: None,
+            storage: "runtime_error".to_string(),
+            file_path: None,
+            error: Some(error),
+        },
+    }
+}
+
+async fn save_strategy_with_config_async(
+    request: &SaveStrategyRequest,
+    config: &SmartTradeToolConfig,
+) -> SaveStrategyResult {
     match &config.database_url {
         Some(database_url) if !database_url.is_empty() => {
-            match persist_strategy_postgres(request, database_url) {
+            match persist_strategy_postgres_async(request, database_url).await {
                 Ok(strategy_id) => SaveStrategyResult {
                     success: true,
                     strategy_id: Some(strategy_id),
@@ -940,44 +1003,36 @@ fn save_strategy_with_config(
     }
 }
 
-fn persist_strategy_postgres(
+async fn persist_strategy_postgres_async(
     request: &SaveStrategyRequest,
     database_url: &str,
 ) -> Result<String, String> {
-    let database_url = database_url.to_string();
-    let request = request.clone();
-    match tool_block_on(async move {
-        let pool = PgPoolOptions::new()
-            .max_connections(1)
-            .connect(&database_url)
-            .await
-            .map_err(|error| error.to_string())?;
-        let strategy_id: i32 = sqlx::query_scalar(
-            r#"
-            INSERT INTO strategies
-                (name, code, explanation, status, session_id, user_id, pair, timeframe, created_at, updated_at)
-            VALUES
-                ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-            RETURNING id
-            "#,
-        )
-        .bind(&request.strategy_name)
-        .bind(&request.code)
-        .bind(&request.explanation)
-        .bind(&request.status)
-        .bind(&request.session_id)
-        .bind(&request.user_id)
-        .bind(&request.pair)
-        .bind(&request.timeframe)
-        .fetch_one(&pool)
+    let pool = PgPoolOptions::new()
+        .max_connections(1)
+        .connect(database_url)
         .await
         .map_err(|error| error.to_string())?;
-        Ok::<String, String>(strategy_id.to_string())
-    })
-    {
-        Ok(result) => result,
-        Err(error) => Err(error),
-    }
+    let strategy_id: i32 = sqlx::query_scalar(
+        r#"
+        INSERT INTO strategies
+            (name, code, explanation, status, session_id, user_id, pair, timeframe, created_at, updated_at)
+        VALUES
+            ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        RETURNING id
+        "#,
+    )
+    .bind(&request.strategy_name)
+    .bind(&request.code)
+    .bind(&request.explanation)
+    .bind(&request.status)
+    .bind(&request.session_id)
+    .bind(&request.user_id)
+    .bind(&request.pair)
+    .bind(&request.timeframe)
+    .fetch_one(&pool)
+    .await
+    .map_err(|error| error.to_string())?;
+    Ok(strategy_id.to_string())
 }
 
 fn persist_strategy_local(
@@ -1068,33 +1123,68 @@ fn persist_strategy_local(
 }
 
 fn compile_result_from_json(body: JsonValue, retry: u64) -> CompileResult {
-    let success = body
+    let reported_success = body
         .get("success")
         .and_then(JsonValue::as_bool)
         .unwrap_or(false);
+    let ex5_base64 = body
+        .get("ex5_base64")
+        .and_then(JsonValue::as_str)
+        .filter(|value| !value.trim().is_empty())
+        .map(ToOwned::to_owned);
+    let artifact_path_present = ["compile_artifact_path", "artifact_path", "ex5_path"]
+        .iter()
+        .any(|field| {
+            body.get(*field)
+                .and_then(JsonValue::as_str)
+                .is_some_and(|value| !value.trim().is_empty())
+        });
+    let source = body
+        .get("source")
+        .and_then(JsonValue::as_str)
+        .unwrap_or("c3_metaeditor")
+        .to_string();
+    let artifact_present = ex5_base64.is_some() || artifact_path_present;
+    let success = reported_success && (source == "stub" || artifact_present);
+    let status = if reported_success && !success {
+        Some("ARTIFACT_MISSING".to_string())
+    } else {
+        body.get("status")
+            .and_then(JsonValue::as_str)
+            .map(ToOwned::to_owned)
+    };
+    let mut errors = compiler_messages_from_value(body.get("errors"));
+    let note = body
+        .get("note")
+        .and_then(JsonValue::as_str)
+        .map(ToOwned::to_owned);
+    let message = if reported_success && !success {
+        Some(
+            "Compiler reported success but did not return a .ex5 artifact marker.".to_string(),
+        )
+    } else {
+        body.get("message")
+            .and_then(JsonValue::as_str)
+            .map(ToOwned::to_owned)
+    };
+    if reported_success && !success {
+        errors.push(CompilerMessage {
+            message: message.clone().unwrap_or_else(|| {
+                "Compiler reported success without a .ex5 artifact.".to_string()
+            }),
+        });
+    }
     CompileResult {
         success,
-        status: body
-            .get("status")
-            .and_then(JsonValue::as_str)
-            .map(ToOwned::to_owned),
+        status,
         retry,
         max_retries: Some(MAX_COMPILE_RETRIES),
-        errors: compiler_messages_from_value(body.get("errors")),
+        errors,
         warnings: compiler_messages_from_value(body.get("warnings")),
-        source: body
-            .get("source")
-            .and_then(JsonValue::as_str)
-            .unwrap_or("c3_metaeditor")
-            .to_string(),
-        note: body
-            .get("note")
-            .and_then(JsonValue::as_str)
-            .map(ToOwned::to_owned),
-        message: body
-            .get("message")
-            .and_then(JsonValue::as_str)
-            .map(ToOwned::to_owned),
+        source,
+        note,
+        message,
+        ex5_base64,
     }
 }
 
@@ -1289,6 +1379,12 @@ fn tool_block_on<F>(future: F) -> Result<F::Output, String>
 where
     F: Future,
 {
+    if tokio::runtime::Handle::try_current().is_ok() {
+        return Err(
+            "cannot call synchronous SmartTrade tool wrapper from an active Tokio runtime; use the async API instead"
+                .to_string(),
+        );
+    }
     tool_runtime().map(|runtime| runtime.block_on(future))
 }
 
@@ -1364,6 +1460,94 @@ fn escape_mql5_string(value: &str) -> String {
     value.replace('"', "\\\"")
 }
 
+fn strip_comments_and_strings(code: &str) -> String {
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    enum ScanState {
+        Code,
+        LineComment,
+        BlockComment,
+        String,
+        Char,
+    }
+
+    let mut output = String::with_capacity(code.len());
+    let mut chars = code.chars().peekable();
+    let mut state = ScanState::Code;
+    let mut escaped = false;
+
+    while let Some(ch) = chars.next() {
+        match state {
+            ScanState::Code => match ch {
+                '/' if chars.peek() == Some(&'/') => {
+                    let _ = chars.next();
+                    output.push(' ');
+                    output.push(' ');
+                    state = ScanState::LineComment;
+                }
+                '/' if chars.peek() == Some(&'*') => {
+                    let _ = chars.next();
+                    output.push(' ');
+                    output.push(' ');
+                    state = ScanState::BlockComment;
+                }
+                '"' => {
+                    output.push(' ');
+                    state = ScanState::String;
+                    escaped = false;
+                }
+                '\'' => {
+                    output.push(' ');
+                    state = ScanState::Char;
+                    escaped = false;
+                }
+                _ => output.push(ch),
+            },
+            ScanState::LineComment => {
+                if ch == '\n' {
+                    output.push('\n');
+                    state = ScanState::Code;
+                } else {
+                    output.push(' ');
+                }
+            }
+            ScanState::BlockComment => {
+                if ch == '*' && chars.peek() == Some(&'/') {
+                    let _ = chars.next();
+                    output.push(' ');
+                    output.push(' ');
+                    state = ScanState::Code;
+                } else if ch == '\n' {
+                    output.push('\n');
+                } else {
+                    output.push(' ');
+                }
+            }
+            ScanState::String => {
+                output.push(if ch == '\n' { '\n' } else { ' ' });
+                if ch == '"' && !escaped {
+                    state = ScanState::Code;
+                }
+                escaped = ch == '\\' && !escaped;
+                if ch != '\\' {
+                    escaped = false;
+                }
+            }
+            ScanState::Char => {
+                output.push(if ch == '\n' { '\n' } else { ' ' });
+                if ch == '\'' && !escaped {
+                    state = ScanState::Code;
+                }
+                escaped = ch == '\\' && !escaped;
+                if ch != '\\' {
+                    escaped = false;
+                }
+            }
+        }
+    }
+
+    output
+}
+
 fn issue(
     issue_type: impl Into<String>,
     severity: impl Into<String>,
@@ -1379,8 +1563,8 @@ fn issue(
 #[cfg(test)]
 mod tests {
     use super::{
-        classify_intent, compile_mql5, detect_ambiguity, extract_strategy_spec,
-        save_strategy, search_knowledge_base, run_static_analysis,
+        classify_intent, compile_mql5, compile_result_from_json, detect_ambiguity,
+        extract_strategy_spec, run_static_analysis, save_strategy, search_knowledge_base,
         AmbiguityStatus, SaveStrategyRequest, SmartTradeToolExecutor, StrategyIntent,
     };
     use crate::conversation::ToolExecutor;
@@ -1486,6 +1670,51 @@ mod tests {
     }
 
     #[test]
+    fn static_analysis_ignores_comments_and_strings_for_structure() {
+        let code = r#"
+            #property strict
+            int OnInit(){ return(INIT_SUCCEEDED); }
+            void OnDeinit(const int reason){}
+            void OnTick(){
+                string ignored = "{ not real code (";
+                // void OnTick( { comment noise
+                Print(ignored);
+            }
+        "#;
+
+        let analysis = run_static_analysis(code, 1);
+
+        assert!(analysis.passed);
+        assert!(!analysis
+            .errors
+            .iter()
+            .any(|issue| issue.issue_type == "BRACKET_MISMATCH"));
+        assert!(!analysis
+            .errors
+            .iter()
+            .any(|issue| issue.issue_type == "PAREN_MISMATCH"));
+    }
+
+    #[test]
+    fn static_analysis_does_not_accept_functions_named_only_in_comments() {
+        let code = r#"
+            #property strict
+            int OnInit(){ return(INIT_SUCCEEDED); }
+            void OnDeinit(const int reason){}
+            // void OnTick(){}
+        "#;
+
+        let analysis = run_static_analysis(code, 1);
+
+        assert!(!analysis.passed);
+        assert!(analysis
+            .errors
+            .iter()
+            .any(|issue| issue.issue_type == "MISSING_FUNCTION"
+                && issue.message.contains("OnTick")));
+    }
+
+    #[test]
     fn searches_local_knowledge_base_with_keyword_scoring() {
         let result = search_knowledge_base("sma crossover eurusd", 3);
 
@@ -1502,7 +1731,11 @@ mod tests {
         let _guard = crate::test_env_lock();
         std::env::remove_var("C3_COMPILER_URL");
 
-        let result = compile_mql5("int OnInit(){return(INIT_SUCCEEDED);} void OnDeinit(const int reason){} void OnTick(){}", "session-1", 1);
+        let result = compile_mql5(
+            "int OnInit(){return(INIT_SUCCEEDED);} void OnDeinit(const int reason){} void OnTick(){}",
+            "session-1",
+            1,
+        );
 
         assert!(result.success);
         assert_eq!(result.source, "stub");
@@ -1510,6 +1743,71 @@ mod tests {
             .warnings
             .iter()
             .any(|warning| warning.message.contains("STUB MODE")));
+    }
+
+    #[test]
+    fn sync_compile_wrapper_fails_cleanly_inside_tokio_runtime() {
+        let _guard = crate::test_env_lock();
+        std::env::remove_var("C3_COMPILER_URL");
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("test runtime should build");
+
+        let result = runtime.block_on(async {
+            compile_mql5(
+                "int OnInit(){return(INIT_SUCCEEDED);} void OnDeinit(const int reason){} void OnTick(){}",
+                "session-1",
+                1,
+            )
+        });
+
+        assert!(!result.success);
+        assert_eq!(result.status.as_deref(), Some("RUNTIME_ERROR"));
+        assert!(result
+            .errors
+            .iter()
+            .any(|error| error.message.contains("use the async API")));
+    }
+
+    #[test]
+    fn compile_result_rejects_success_without_artifact_marker() {
+        let result = compile_result_from_json(
+            json!({
+                "success": true,
+                "status": "COMPILED",
+                "source": "metaeditor",
+                "errors": [],
+                "warnings": []
+            }),
+            1,
+        );
+
+        assert!(!result.success);
+        assert_eq!(result.status.as_deref(), Some("ARTIFACT_MISSING"));
+        assert!(result
+            .errors
+            .iter()
+            .any(|error| error.message.contains(".ex5 artifact")));
+    }
+
+    #[test]
+    fn compile_result_accepts_success_with_ex5_artifact() {
+        let result = compile_result_from_json(
+            json!({
+                "success": true,
+                "status": "COMPILED",
+                "source": "metaeditor",
+                "errors": [],
+                "warnings": [],
+                "ex5_base64": "ZXhhbXBsZQ=="
+            }),
+            1,
+        );
+
+        assert!(result.success);
+        assert_eq!(result.status.as_deref(), Some("COMPILED"));
+        assert_eq!(result.ex5_base64.as_deref(), Some("ZXhhbXBsZQ=="));
     }
 
     #[test]
