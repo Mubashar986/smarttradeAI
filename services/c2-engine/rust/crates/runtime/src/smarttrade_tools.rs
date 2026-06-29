@@ -263,7 +263,7 @@ pub struct SaveStrategyResult {
     pub error: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct SmartTradeToolConfig {
     pub compiler_url: Option<String>,
     pub database_url: Option<String>,
@@ -271,6 +271,7 @@ pub struct SmartTradeToolConfig {
     pub pinecone_index: String,
     pub pinecone_namespace: String,
     pub strategies_dir: PathBuf,
+    pub pool: Option<sqlx::PgPool>,
 }
 
 impl SmartTradeToolConfig {
@@ -287,6 +288,7 @@ impl SmartTradeToolConfig {
             strategies_dir: std::env::var("STRATEGIES_DIR")
                 .map(PathBuf::from)
                 .unwrap_or_else(|_| PathBuf::from("/workspace/strategies")),
+            pool: None,
         }
     }
 }
@@ -978,6 +980,27 @@ async fn save_strategy_with_config_async(
     request: &SaveStrategyRequest,
     config: &SmartTradeToolConfig,
 ) -> SaveStrategyResult {
+    if let Some(ref pool) = config.pool {
+        match persist_strategy_postgres_with_pool(request, pool).await {
+            Ok(strategy_id) => return SaveStrategyResult {
+                success: true,
+                strategy_id: Some(strategy_id),
+                status: Some(request.status.clone()),
+                storage: "postgresql_shared".to_string(),
+                file_path: None,
+                error: None,
+            },
+            Err(error) => return SaveStrategyResult {
+                success: false,
+                strategy_id: None,
+                status: None,
+                storage: "postgresql_shared_error".to_string(),
+                file_path: None,
+                error: Some(error),
+            },
+        }
+    }
+
     match &config.database_url {
         Some(database_url) if !database_url.is_empty() => {
             match persist_strategy_postgres_async(request, database_url).await {
@@ -1001,6 +1024,33 @@ async fn save_strategy_with_config_async(
         }
         _ => persist_strategy_local(request, &config.strategies_dir),
     }
+}
+
+async fn persist_strategy_postgres_with_pool(
+    request: &SaveStrategyRequest,
+    pool: &sqlx::PgPool,
+) -> Result<String, String> {
+    let strategy_id: i32 = sqlx::query_scalar(
+        r#"
+        INSERT INTO strategies
+            (name, code, explanation, status, session_id, user_id, pair, timeframe, created_at, updated_at)
+        VALUES
+            ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        RETURNING id
+        "#,
+    )
+    .bind(&request.strategy_name)
+    .bind(&request.code)
+    .bind(&request.explanation)
+    .bind(&request.status)
+    .bind(&request.session_id)
+    .bind(&request.user_id)
+    .bind(&request.pair)
+    .bind(&request.timeframe)
+    .fetch_one(pool)
+    .await
+    .map_err(|error| error.to_string())?;
+    Ok(strategy_id.to_string())
 }
 
 async fn persist_strategy_postgres_async(

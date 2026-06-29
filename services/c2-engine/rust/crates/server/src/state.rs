@@ -151,11 +151,12 @@ pub struct AppState {
     pub(crate) turn_tx: mpsc::UnboundedSender<TurnRequest>,
     pub llm_model: String,
     pub(crate) provider: Arc<ProviderClient>,
+    pub pool: Option<sqlx::PgPool>,
 }
 
 impl AppState {
     #[must_use]
-    pub fn new() -> (Self, mpsc::UnboundedReceiver<TurnRequest>) {
+    pub fn new(pool: Option<sqlx::PgPool>) -> (Self, mpsc::UnboundedReceiver<TurnRequest>) {
         let (turn_tx, turn_rx) = mpsc::unbounded_channel();
 
         let llm_model = std::env::var("LLM_MODEL")
@@ -177,6 +178,7 @@ impl AppState {
                 turn_tx,
                 llm_model,
                 provider,
+                pool,
             },
             turn_rx,
         )
@@ -241,7 +243,7 @@ impl AppState {
 
 impl Default for AppState {
     fn default() -> Self {
-        Self::new().0
+        Self::new(None).0
     }
 }
 

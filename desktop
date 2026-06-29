@@ -1,0 +1,202 @@
+# SmartTradeAI C2-Engine — Updated Project State (2026-06-28)
+
+## What You Are Building
+
+SmartTradeAI — a web platform where traders describe a trading strategy in plain English and get back working compiled MQL5 Expert Advisor code for MetaTrader 5. Backend is Rust with Axum. Frontend will be React. Deployed on AWS with a Windows EC2 sidecar for real MQL5 compilation.
+
+## Codebase Structure
+
+| Component | Location | Status |
+|-----------|----------|--------|
+| **api crate** | `crates/api` | LLM provider abstraction (Anthropic, OpenAI, OpenRouter, Groq). Streaming via `MessageStream`. |
+| **runtime crate** | `crates/runtime` | `ConversationRuntime` with tool loop, headless mode, `SmartTradeToolExecutor` with all tools. |
+| **server crate** | `crates/server` | Axum HTTP server, split into modules: `routes/turns.rs`, `routes/sessions.rs`, `state.rs`, `middleware/auth.rs`, `llm_bridge.rs`, `mql5_extractor.rs`. |
+| **compile-service** | `compile-service/main.py` | Python FastAPI wrapping `metaeditor64.exe` on Windows host port 8080. |
+
+## Architecture Decisions (Current)
+
+- **LLM Provider:** OpenRouter → Groq `llama-3.3-70b-versatile` (free tier). Model string varies.
+- **Compilation:** Design 2 — real MetaEditor on Windows. `C3_COMPILER_URL=http://host.docker.internal:8080/compile` switches from stub to real.
+- **LlmBridge:** Adapts between `api` crate types and `runtime` crate types. Implements `runtime::ApiClient`.
+- **PermissionPolicy:** `PermissionMode::Allow` — all tools auto-approved.
+- **State:** In-memory `DashMap`/`RwLock`. Sessions and tasks lost on restart. Next major task is persistence (Task 6).
+- **Max Tokens:** `CLAW_MAX_TOKENS=8192` (was 512, caused empty responses).
+- **Max Iterations:** `CLAW_MAX_TURN_ITERATIONS=8` (default).
+
+---
+
+## Tasks Completed
+
+### Task 1 — Module Split
+- Split `server/src/lib.rs` (82KB) into proper modules.
+- **Status:** ✅ Complete, tested.
+
+### Task 2 — Wire ConversationRuntime
+- Removed deterministic Rust functions (`classify_intent`, `detect_ambiguity`, etc.).
+- Now calls real LLM via `ConversationRuntime::run_turn_headless()`.
+- **Status:** ✅ Complete, tested.
+
+### Task 3 — MQL5 Code Extraction (`mql5_extractor.rs`)
+- **Phase 1:** Fenced ```` ```mql5 ```` blocks.
+- **Phase 2:** Generic fenced blocks with MQL5 keyword validation.
+- **Phase 3:** Keyword fallback — **NOW STRICTER** (requires function signature like `void OnTick`).
+- **18 unit tests.**
+- **Status:** ✅ Complete. **Bug fixed:** Phase 3 was too broad (matched `iMA` in prose). Now requires `void OnTick`/`int OnInit` in addition to keywords.
+
+### Task 4 — Compile Service (`compile-service/main.py`)
+- FastAPI wrapper around `metaeditor64.exe`.
+- Handles UTF-16-LE logs, `.ex5` base64 encoding, stub mode.
+- **Status:** ✅ Complete. Works with Windows path. Requires admin PowerShell to write to `C:\Program Files\MetaTrader 5\`.
+
+### Task 5 — Compile Loop in `process_turn`
+- **Server-side compile loop** after `run_turn_headless()` returns.
+- Bounded: `MAX_CODEGEN_COMPILE_ATTEMPTS = 2`.
+- **Compile loop retries:** If first compile fails, sends errors to LLM and retries.
+- **Retry system prompt:** Added `retry_system_prompt()` that tells LLM to **skip classify_intent/detect_ambiguity** on retries. LLM goes straight to fixing code.
+- **LLM tool loop:** `compile_mql5` and `save_strategy` **removed from LLM tool definitions** to prevent infinite tool loop. Server handles compilation directly.
+- **Events:** `DraftGeneratedCode` (immediate after extraction), `GeneratedCode` (post-compile), `turn_complete`, `status: compiling`.
+- **Turn timeout:** 900s via `tokio::time::timeout`.
+- **Panic watchdog:** Emits both `error` and `turn_error` SSE events.
+- **Status:** ✅ Complete. Loop architecture is sound.
+
+---
+
+## Bugs Discovered and Fixed (Post-Task 5)
+
+| Bug | Symptom | Fix | File |
+|-----|---------|-----|------|
+| **False positive extraction** | `has_code: true` for "What is RSI?" | Phase 3 now requires function signature (`void OnTick`) | `mql5_extractor.rs` |
+| **LLM tool loop (infinite)** | LLM called `compile_mql5` 15+ times | Removed `compile_mql5`/`save_strategy` from LLM tool definitions | `llm_bridge.rs` |
+| **Retry iteration waste** | `iterations: 8` on retry because LLM re-classified intent | Added `retry_system_prompt()` — no mention of classify/detect | `turns.rs` |
+| **MQL5 type error** | `ENUM_ORDER_TYPE` used for `PositionGetInteger(POSITION_TYPE)` | Added `ENUM_POSITION_TYPE` hint in retry prompt + prompt-only approach | `turns.rs` |
+| **Empty response** | Assistant stream produced no content | `CLAW_MAX_TOKENS` raised from 512 to 8192 | `.env` |
+| **Permission denied** | `[Errno 13]` writing to `C:\Program Files\` | Run compile service as Administrator | Windows UAC |
+
+## Bugs Still Known (Not Critical)
+
+| Bug | Impact | Note |
+|-----|--------|------|
+| **LLM garbage on retry** | EURUSD strategy produced `].time` and `==========` corruption | **Model quality issue** (`llama-3.3-70b`). Better model (Claude/GPT-4o) should fix this. |
+| **MQL4-style code** | LLM may use `Bid`, `Ask`, `Time[0]` | Prompt-only mitigation. Static analyzer hard rejects not yet implemented. |
+| **No persistence** | Sessions lost on restart | Task 6 will fix this. |
+| **No auth enforcement** | All routes open | Task 7 will gate behind JWT. |
+| **No rate limiting** | Unlimited LLM calls | Task 8 will add Redis token bucket. |
+| **No structured logging** | Hard to debug production | Task 9 will add tracing. |
+| **Pinecone stub** | `search_knowledge_base` returns empty mock results | Planned for later integration. Config fields exist but not wired. |
+
+---
+
+## Current State (End-to-End Pipeline)
+
+```
+User Request → POST /v1/sessions/{id}/turn
+    → process_turn()
+        → Build runtime with system_prompt (or retry_system_prompt on retry)
+        → run_turn_headless() (with bounded tool loop, max 8 iterations)
+        → extract_mql5_code() (3-phase, strict fallback)
+        → compile_mql5_async() → compile-service.py → metaeditor64.exe
+        → If compile fails → build_compile_feedback() → retry with retry_system_prompt()
+        → If compile succeeds → save_strategy_async() → database
+        → broadcast events (SSE) to frontend
+        → Return task result
+```
+
+### What Works Right Now
+
+| Flow | Status | Evidence |
+|------|--------|----------|
+| "What is RSI?" → explanation | ✅ | `has_code: false`, clean response, 2 iterations |
+| "Hello World EA" → compile | ✅ | `has_code: true`, `compile_status: COMPILED`, `strategy_id: 4` |
+| "Build EURUSD strategy" → compile fails | ⚠️ | `has_code: true`, first draft is clean, retry produces garbage |
+| SSE events streaming | ✅ | `snapshot`, `draft_generated_code`, `compiling`, `turn_complete` |
+| Compile service direct test | ✅ | `test-direct-compile` produced `.ex5` |
+| Session creation + polling | ✅ | Multiple sessions tested |
+| Extraction false positive fix | ✅ | RSI no longer triggers `has_code: true` |
+| Retry skip classify/detect | ✅ | `retry_system_prompt()` implemented |
+
+### What Doesn't Work Reliably
+
+| Issue | Root Cause | Planned Fix |
+|-------|------------|-------------|
+| EURUSD retry generates garbage | `llama-3.3-70b` model quality | Switch to Claude/GPT-4o |
+| `ENUM_POSITION_TYPE` type error | LLM doesn't know MQL5 type system | Better model + prompt hints |
+| `iterations: 8` still possible | LLM may still call `search_knowledge_base` on retry | Better model should reduce this |
+
+---
+
+## Remaining Tasks (In Order)
+
+### Task 6 — Persistence (Next)
+- Add `db` crate with `sqlx` and Postgres.
+- Migrations: `users`, `sessions`, `tasks`, `strategies` tables.
+- Persist sessions after each turn, tasks on creation/completion.
+- Restore sessions from DB on load.
+- **Current blocker:** None. Ready to implement.
+
+### Task 7 — Auth
+- JWT register/login endpoints.
+- Middleware to validate JWT on all `/v1` routes.
+- Gate behind env var so dev mode can skip auth.
+- **Current blocker:** None. Ready after Task 6.
+
+### Task 8 — Rate Limiting
+- Redis token bucket per user per minute.
+- Prevent abuse and control LLM costs.
+- Redis already in `docker-compose.yml`.
+- **Current blocker:** None.
+
+### Task 9 — Structured Logging
+- `tracing` crate for all LLM calls, compiles, requests.
+- Log model, tokens, duration, success/failure.
+- **Current blocker:** None.
+
+### Task 10 — React Frontend
+- Chat UI with SSE streaming (tokens appearing in real-time).
+- Strategy workspace: view code, download `.ex5`.
+- File upload for strategy documents.
+- Auth screens, strategy history dashboard.
+- **Current blocker:** Backend SSE and API need to be finalized first.
+
+### Task 11 — AWS Deployment
+- Dockerfile production build.
+- ECS Fargate for Rust backend, RDS Postgres, ElastiCache Redis.
+- Windows EC2 for compile service.
+- ALB with HTTPS.
+- **Current blocker:** Tasks 6-10.
+
+---
+
+## Key Technical Facts (For New Agents)
+
+- `runtime::ApiClient::stream()` is **synchronous**. The bridge uses `tokio::task::block_in_place` to call the async `ProviderClient` from within it.
+- `SmartTradeToolExecutor` is fully built in `runtime/src/smarttrade_tools.rs`. All tools already implemented. **Do not rebuild.**
+- `ConversationRuntime` takes 5 args: `Session`, `ApiClient`, `ToolExecutor`, `PermissionPolicy`, `Vec<String>` system prompt.
+- `run_turn_headless()` expects the user message to **already be in the session** before it is called. `enqueue_turn()` in `turns.rs` already pushes it.
+- **Session must be written back** after `run_turn_headless()` via `runtime.into_session()` and stored in `AppState`. If skipped, conversation has no memory between turns.
+- `PermissionPolicy` and `PermissionMode` are defined in `runtime/src/conversation.rs` but NOT re-exported from `runtime/src/lib.rs`. Access via full path or add to `pub use` in `lib.rs`.
+- **Compile service** runs on Windows host at port 8080. Docker reaches it via `host.docker.internal:8080`. Env var `C3_COMPILER_URL` switches stub ↔ real.
+- **MetaEditor** is a GUI app. It writes logs to the same directory as the `.mq5` file, ignoring `/log` flag. The Python service checks both `session.log` and `session.mq5.log`.
+- **LLM setup:** OpenRouter base URL → Groq. `LLM_PROVIDER=openai`, `OPENAI_BASE_URL=https://openrouter.ai/api/v1`.
+- **System prompt:** `smarttrade_system_prompt()` for first turn. `retry_system_prompt()` for compile retries (no classify/detect).
+- **Max compile attempts:** `MAX_CODEGEN_COMPILE_ATTEMPTS = 2`.
+- **Extraction:** `extract_mql5_code()` in `mql5_extractor.rs` — 3 phases with strict fallback.
+
+## Model Notes
+
+- **Current test model:** `llama-3.3-70b-versatile` (Groq free tier via OpenRouter).
+- **Issues with this model:** Produces `<unk>` tokens on complex retries, garbage code fragments, uses wrong MQL5 types.
+- **Planned switch:** Claude Sonnet 4 or GPT-4o via OpenRouter for production.
+- **The "Hello World" test works** because the model handles simple code correctly. Complex strategies expose the model's limits.
+
+## Files to Know
+
+| File | Purpose | Last Modified |
+|------|---------|---------------|
+| `server/src/routes/turns.rs` | Main turn orchestration, compile loop, retry logic | Retry prompt fix, extraction loop |
+| `server/src/llm_bridge.rs` | LLM bridge, tool definitions (compile/save removed) | Tool loop fix |
+| `server/src/mql5_extractor.rs` | Code extraction (3-phase, strict fallback) | Phase 3 signature requirement |
+| `runtime/src/smarttrade_tools.rs` | Tool executor, async compile/save APIs | Async wrappers, `tool_block_on` guard |
+| `runtime/src/conversation.rs` | `ConversationRuntime`, `run_turn_headless()` | No recent changes |
+| `compile-service/main.py` | FastAPI compile service | Working with Windows paths |
+| `docker-compose.yml` | Docker orchestration | `C3_COMPILER_URL` env var |
+| `.env.example` | Environment variables | `C3_COMPILER_URL`, `MT5_PATH` |

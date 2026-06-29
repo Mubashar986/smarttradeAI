@@ -120,7 +120,7 @@ mod tests {
             let address = listener
                 .local_addr()
                 .expect("listener should report local address");
-            let (state, turn_rx) = AppState::new();
+            let (state, turn_rx) = AppState::new(None);
             let worker_state = state.clone();
             let worker_handle = tokio::spawn(async move {
                 run_turn_worker(worker_state, turn_rx).await;

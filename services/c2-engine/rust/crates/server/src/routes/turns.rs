@@ -280,7 +280,9 @@ async fn process_turn(state: AppState, request: TurnRequest) -> Result<(), Strin
     );
 
     // 3. Build the tool executor.
-    let executor = SmartTradeToolExecutor::with_config(SmartTradeToolConfig::from_env());
+    let mut config = SmartTradeToolConfig::from_env();
+    config.pool = state.pool.clone();
+    let executor = SmartTradeToolExecutor::with_config(config);
 
     // 4. Build permission policy (allow everything in headless server mode).
     let policy = PermissionPolicy::new(PermissionMode::Allow);
@@ -716,7 +718,9 @@ fn build_runtime_from_session(
 ) -> ConversationRuntime<LlmBridge, SmartTradeToolExecutor> {
     let max_tokens = api::max_tokens_for_model(&state.llm_model);
     let bridge = LlmBridge::new(state.provider.clone(), state.llm_model.clone(), max_tokens);
-    let executor = SmartTradeToolExecutor::with_config(SmartTradeToolConfig::from_env());
+    let mut config = SmartTradeToolConfig::from_env();
+    config.pool = state.pool.clone();
+    let executor = SmartTradeToolExecutor::with_config(config);
     let policy = PermissionPolicy::new(PermissionMode::Allow);
     ConversationRuntime::new(session, bridge, executor, policy, smarttrade_system_prompt())
         .with_max_iterations(max_turn_iterations())
