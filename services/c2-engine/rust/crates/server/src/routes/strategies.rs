@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::{Path as FsPath, PathBuf};
 
-use axum::extract::{Extension, Path};
+use axum::extract::{Extension, Path, State};
 use axum::http::StatusCode;
 use axum::Json;
 use runtime::SmartTradeToolConfig;
@@ -11,16 +11,17 @@ use sqlx::Row;
 
 use crate::middleware::auth::AuthClaims;
 use crate::state::{
-    ApiResult, DeleteStrategyResponse, ErrorResponse, ListStrategiesResponse,
+    ApiResult, AppState, DeleteStrategyResponse, ErrorResponse, ListStrategiesResponse,
     StrategyDetailsResponse, StrategyRecord, UpdateStrategyRequest, internal_error, not_found,
     unix_timestamp_millis,
 };
 
 pub(crate) async fn list_strategies(
+    State(state): State<AppState>,
     claims: Option<Extension<AuthClaims>>,
 ) -> ApiResult<Json<ListStrategiesResponse>> {
     let user_id = resolved_user_id(claims);
-    let strategies = load_strategies_for_user(&user_id)
+    let strategies = load_strategies_for_user(&state, &user_id)
         .await
         .map_err(internal_error)?;
     Ok(Json(ListStrategiesResponse {
@@ -29,11 +30,12 @@ pub(crate) async fn list_strategies(
 }
 
 pub(crate) async fn get_strategy(
+    State(state): State<AppState>,
     claims: Option<Extension<AuthClaims>>,
     Path(id): Path<String>,
 ) -> ApiResult<Json<StrategyDetailsResponse>> {
     let user_id = resolved_user_id(claims);
-    let strategy = load_strategy_record(&user_id, &id)
+    let strategy = load_strategy_record(&state, &user_id, &id)
         .await
         .map_err(internal_error)?
         .ok_or_else(|| not_found(format!("strategy `{id}` not found")))?;
@@ -41,6 +43,7 @@ pub(crate) async fn get_strategy(
 }
 
 pub(crate) async fn patch_strategy(
+    State(state): State<AppState>,
     claims: Option<Extension<AuthClaims>>,
     Path(id): Path<String>,
     Json(payload): Json<UpdateStrategyRequest>,
@@ -61,7 +64,7 @@ pub(crate) async fn patch_strategy(
     }
 
     let user_id = resolved_user_id(claims);
-    let strategy = update_strategy_record(&user_id, &id, &payload)
+    let strategy = update_strategy_record(&state, &user_id, &id, &payload)
         .await
         .map_err(internal_error)?
         .ok_or_else(|| not_found(format!("strategy `{id}` not found")))?;
@@ -69,11 +72,12 @@ pub(crate) async fn patch_strategy(
 }
 
 pub(crate) async fn delete_strategy(
+    State(state): State<AppState>,
     claims: Option<Extension<AuthClaims>>,
     Path(id): Path<String>,
 ) -> ApiResult<Json<DeleteStrategyResponse>> {
     let user_id = resolved_user_id(claims);
-    let deleted = soft_delete_strategy_record(&user_id, &id)
+    let deleted = soft_delete_strategy_record(&state, &user_id, &id)
         .await
         .map_err(internal_error)?
         .ok_or_else(|| not_found(format!("strategy `{id}` not found")))?;
@@ -88,47 +92,66 @@ fn resolved_user_id(claims: Option<Extension<AuthClaims>>) -> String {
         .to_string()
 }
 
-async fn load_strategies_for_user(user_id: &str) -> Result<Vec<StrategyRecord>, String> {
-    let storage = SmartTradeToolConfig::from_env();
-    match storage.database_url {
-        Some(database_url) => load_db_strategies(&database_url, user_id).await,
-        None => load_local_strategies(&storage.strategies_dir, user_id),
+async fn load_strategies_for_user(state: &AppState, user_id: &str) -> Result<Vec<StrategyRecord>, String> {
+    if let Some(ref pool) = state.pool {
+        load_db_strategies_with_pool(pool, user_id).await
+    } else {
+        let storage = SmartTradeToolConfig::from_env();
+        match storage.database_url {
+            Some(database_url) => load_db_strategies(&database_url, user_id).await,
+            None => load_local_strategies(&storage.strategies_dir, user_id),
+        }
     }
 }
 
 async fn load_strategy_record(
+    state: &AppState,
     user_id: &str,
     strategy_id: &str,
 ) -> Result<Option<StrategyRecord>, String> {
-    let storage = SmartTradeToolConfig::from_env();
-    match storage.database_url {
-        Some(database_url) => load_db_strategy(&database_url, user_id, strategy_id).await,
-        None => load_local_strategy(&storage.strategies_dir, user_id, strategy_id),
+    if let Some(ref pool) = state.pool {
+        load_db_strategy_with_pool(pool, user_id, strategy_id).await
+    } else {
+        let storage = SmartTradeToolConfig::from_env();
+        match storage.database_url {
+            Some(database_url) => load_db_strategy(&database_url, user_id, strategy_id).await,
+            None => load_local_strategy(&storage.strategies_dir, user_id, strategy_id),
+        }
     }
 }
 
 async fn update_strategy_record(
+    state: &AppState,
     user_id: &str,
     strategy_id: &str,
     update: &UpdateStrategyRequest,
 ) -> Result<Option<StrategyRecord>, String> {
-    let storage = SmartTradeToolConfig::from_env();
-    match storage.database_url {
-        Some(database_url) => {
-            update_db_strategy(&database_url, user_id, strategy_id, update).await
+    if let Some(ref pool) = state.pool {
+        update_db_strategy_with_pool(pool, user_id, strategy_id, update).await
+    } else {
+        let storage = SmartTradeToolConfig::from_env();
+        match storage.database_url {
+            Some(database_url) => {
+                update_db_strategy(&database_url, user_id, strategy_id, update).await
+            }
+            None => update_local_strategy(&storage.strategies_dir, user_id, strategy_id, update),
         }
-        None => update_local_strategy(&storage.strategies_dir, user_id, strategy_id, update),
     }
 }
 
 async fn soft_delete_strategy_record(
+    state: &AppState,
     user_id: &str,
     strategy_id: &str,
 ) -> Result<Option<DeleteStrategyResponse>, String> {
-    let storage = SmartTradeToolConfig::from_env();
-    match storage.database_url {
-        Some(database_url) => soft_delete_db_strategy(&database_url, user_id, strategy_id).await,
-        None => soft_delete_local_strategy(&storage.strategies_dir, user_id, strategy_id),
+    if let Some(ref pool) = state.pool {
+        soft_delete_db_strategy_with_pool(pool, user_id, strategy_id).await
+    } else {
+        let storage = SmartTradeToolConfig::from_env();
+        match storage.database_url {
+            Some(database_url) => soft_delete_db_strategy(&database_url, user_id, strategy_id).await,
+            None => soft_delete_local_strategy(&storage.strategies_dir, user_id, strategy_id),
+        }
     }
 }
 
@@ -287,6 +310,152 @@ async fn soft_delete_db_strategy(
     .bind(user_id)
     .bind(strategy_id_num)
     .fetch_optional(&pool)
+    .await
+    .map_err(|error| error.to_string())?;
+
+    Ok(row.map(|row| DeleteStrategyResponse {
+        strategy_id: row.try_get("id").unwrap_or_default(),
+        status: row
+            .try_get::<String, _>("status")
+            .unwrap_or_else(|_| "DELETED".to_string()),
+    }))
+}
+
+async fn load_db_strategies_with_pool(
+    pool: &sqlx::PgPool,
+    user_id: &str,
+) -> Result<Vec<StrategyRecord>, String> {
+    let rows = sqlx::query(
+        r#"
+        SELECT
+            id::text AS id,
+            name,
+            code,
+            explanation,
+            status,
+            session_id,
+            user_id,
+            pair,
+            timeframe,
+            created_at::text AS created_at,
+            updated_at::text AS updated_at
+        FROM strategies
+        WHERE user_id = $1 AND status <> 'DELETED'
+        ORDER BY updated_at DESC
+        "#,
+    )
+    .bind(user_id)
+    .fetch_all(pool)
+    .await
+    .map_err(|error| error.to_string())?;
+
+    rows.into_iter().map(strategy_record_from_row).collect()
+}
+
+async fn load_db_strategy_with_pool(
+    pool: &sqlx::PgPool,
+    user_id: &str,
+    strategy_id: &str,
+) -> Result<Option<StrategyRecord>, String> {
+    let Ok(strategy_id) = strategy_id.parse::<i64>() else {
+        return Ok(None);
+    };
+    let row = sqlx::query(
+        r#"
+        SELECT
+            id::text AS id,
+            name,
+            code,
+            explanation,
+            status,
+            session_id,
+            user_id,
+            pair,
+            timeframe,
+            created_at::text AS created_at,
+            updated_at::text AS updated_at
+        FROM strategies
+        WHERE user_id = $1 AND id = $2 AND status <> 'DELETED'
+        "#,
+    )
+    .bind(user_id)
+    .bind(strategy_id)
+    .fetch_optional(pool)
+    .await
+    .map_err(|error| error.to_string())?;
+
+    row.map(strategy_record_from_row).transpose()
+}
+
+async fn update_db_strategy_with_pool(
+    pool: &sqlx::PgPool,
+    user_id: &str,
+    strategy_id: &str,
+    update: &UpdateStrategyRequest,
+) -> Result<Option<StrategyRecord>, String> {
+    let Ok(strategy_id) = strategy_id.parse::<i64>() else {
+        return Ok(None);
+    };
+    let row = sqlx::query(
+        r#"
+        UPDATE strategies
+        SET
+            name = COALESCE($3, name),
+            code = COALESCE($4, code),
+            explanation = COALESCE($5, explanation),
+            status = COALESCE($6, status),
+            pair = COALESCE($7, pair),
+            timeframe = COALESCE($8, timeframe),
+            updated_at = NOW()
+        WHERE user_id = $1 AND id = $2 AND status <> 'DELETED'
+        RETURNING
+            id::text AS id,
+            name,
+            code,
+            explanation,
+            status,
+            session_id,
+            user_id,
+            pair,
+            timeframe,
+            created_at::text AS created_at,
+            updated_at::text AS updated_at
+        "#,
+    )
+    .bind(user_id)
+    .bind(strategy_id)
+    .bind(update.name.clone())
+    .bind(update.code.clone())
+    .bind(update.explanation.clone())
+    .bind(update.status.clone())
+    .bind(update.pair.clone())
+    .bind(update.timeframe.clone())
+    .fetch_optional(pool)
+    .await
+    .map_err(|error| error.to_string())?;
+
+    row.map(strategy_record_from_row).transpose()
+}
+
+async fn soft_delete_db_strategy_with_pool(
+    pool: &sqlx::PgPool,
+    user_id: &str,
+    strategy_id: &str,
+) -> Result<Option<DeleteStrategyResponse>, String> {
+    let Ok(strategy_id_num) = strategy_id.parse::<i64>() else {
+        return Ok(None);
+    };
+    let row = sqlx::query(
+        r#"
+        UPDATE strategies
+        SET status = 'DELETED', updated_at = NOW()
+        WHERE user_id = $1 AND id = $2 AND status <> 'DELETED'
+        RETURNING id::text AS id, status
+        "#,
+    )
+    .bind(user_id)
+    .bind(strategy_id_num)
+    .fetch_optional(pool)
     .await
     .map_err(|error| error.to_string())?;
 

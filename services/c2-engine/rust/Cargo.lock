@@ -237,6 +237,7 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "server",
+ "sqlx",
  "tokio",
  "tracing",
  "tracing-subscriber",
