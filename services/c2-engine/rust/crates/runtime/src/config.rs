@@ -25,6 +25,7 @@ pub struct SandboxConfig {
     pub allowed_mounts: Vec<String>,
 }
 
+#[allow(dead_code)]
 pub const CLAW_SETTINGS_SCHEMA_NAME: &str = "SettingsSchema";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -524,7 +525,7 @@ fn read_optional_json_object(path: &Path) -> Result<Option<JsonObject>, ConfigEr
 
     let parsed = match serde_json::from_str::<JsonValue>(&contents) {
         Ok(parsed) => parsed,
-        Err(error) if is_legacy_config => return Ok(None),
+        Err(_error) if is_legacy_config => return Ok(None),
         Err(error) => return Err(ConfigError::Parse(format!("{}: {error}", path.display()))),
     };
     let Some(object) = parsed.as_object() else {

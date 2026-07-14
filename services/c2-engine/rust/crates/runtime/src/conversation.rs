@@ -644,8 +644,9 @@ impl ToolExecutor for StaticToolExecutor {
 mod tests {
     use super::{
         ApiClient, ApiRequest, AssistantEvent, ConversationRuntime, RuntimeError,
-        StaticToolExecutor,
+        StaticToolExecutor, PermissionPrompter, PermissionRequest, PermissionPromptDecision,
     };
+    use crate::{PermissionPolicy, PermissionMode};
     use crate::compact::CompactionConfig;
     use crate::config::{RuntimeFeatureConfig, RuntimeHookConfig};
     use crate::prompt::{ProjectContext, SystemPromptBuilder};
