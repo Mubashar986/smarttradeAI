@@ -6,7 +6,7 @@ use axum::http::StatusCode;
 use axum::Json;
 use runtime::SmartTradeToolConfig;
 use serde_json::Value as JsonValue;
-use sqlx::postgres::{PgPoolOptions, PgRow};
+use sqlx::postgres::PgRow;
 use sqlx::Row;
 
 use crate::middleware::auth::AuthClaims;
@@ -94,13 +94,10 @@ fn resolved_user_id(claims: Option<Extension<AuthClaims>>) -> String {
 
 async fn load_strategies_for_user(state: &AppState, user_id: &str) -> Result<Vec<StrategyRecord>, String> {
     if let Some(ref pool) = state.pool {
-        load_db_strategies_with_pool(pool, user_id).await
+        load_db_strategies(pool, user_id).await
     } else {
         let storage = SmartTradeToolConfig::from_env();
-        match storage.database_url {
-            Some(database_url) => load_db_strategies(&database_url, user_id).await,
-            None => load_local_strategies(&storage.strategies_dir, user_id),
-        }
+        load_local_strategies(&storage.strategies_dir, user_id)
     }
 }
 
@@ -110,13 +107,10 @@ async fn load_strategy_record(
     strategy_id: &str,
 ) -> Result<Option<StrategyRecord>, String> {
     if let Some(ref pool) = state.pool {
-        load_db_strategy_with_pool(pool, user_id, strategy_id).await
+        load_db_strategy(pool, user_id, strategy_id).await
     } else {
         let storage = SmartTradeToolConfig::from_env();
-        match storage.database_url {
-            Some(database_url) => load_db_strategy(&database_url, user_id, strategy_id).await,
-            None => load_local_strategy(&storage.strategies_dir, user_id, strategy_id),
-        }
+        load_local_strategy(&storage.strategies_dir, user_id, strategy_id)
     }
 }
 
@@ -127,15 +121,10 @@ async fn update_strategy_record(
     update: &UpdateStrategyRequest,
 ) -> Result<Option<StrategyRecord>, String> {
     if let Some(ref pool) = state.pool {
-        update_db_strategy_with_pool(pool, user_id, strategy_id, update).await
+        update_db_strategy(pool, user_id, strategy_id, update).await
     } else {
         let storage = SmartTradeToolConfig::from_env();
-        match storage.database_url {
-            Some(database_url) => {
-                update_db_strategy(&database_url, user_id, strategy_id, update).await
-            }
-            None => update_local_strategy(&storage.strategies_dir, user_id, strategy_id, update),
-        }
+        update_local_strategy(&storage.strategies_dir, user_id, strategy_id, update)
     }
 }
 
@@ -145,183 +134,14 @@ async fn soft_delete_strategy_record(
     strategy_id: &str,
 ) -> Result<Option<DeleteStrategyResponse>, String> {
     if let Some(ref pool) = state.pool {
-        soft_delete_db_strategy_with_pool(pool, user_id, strategy_id).await
+        soft_delete_db_strategy(pool, user_id, strategy_id).await
     } else {
         let storage = SmartTradeToolConfig::from_env();
-        match storage.database_url {
-            Some(database_url) => soft_delete_db_strategy(&database_url, user_id, strategy_id).await,
-            None => soft_delete_local_strategy(&storage.strategies_dir, user_id, strategy_id),
-        }
+        soft_delete_local_strategy(&storage.strategies_dir, user_id, strategy_id)
     }
 }
 
 async fn load_db_strategies(
-    database_url: &str,
-    user_id: &str,
-) -> Result<Vec<StrategyRecord>, String> {
-    let pool = PgPoolOptions::new()
-        .max_connections(1)
-        .connect(database_url)
-        .await
-        .map_err(|error| error.to_string())?;
-    let rows = sqlx::query(
-        r#"
-        SELECT
-            id::text AS id,
-            name,
-            code,
-            explanation,
-            status,
-            session_id,
-            user_id,
-            pair,
-            timeframe,
-            created_at::text AS created_at,
-            updated_at::text AS updated_at
-        FROM strategies
-        WHERE user_id = $1 AND status <> 'DELETED'
-        ORDER BY updated_at DESC
-        "#,
-    )
-    .bind(user_id)
-    .fetch_all(&pool)
-    .await
-    .map_err(|error| error.to_string())?;
-
-    rows.into_iter().map(strategy_record_from_row).collect()
-}
-
-async fn load_db_strategy(
-    database_url: &str,
-    user_id: &str,
-    strategy_id: &str,
-) -> Result<Option<StrategyRecord>, String> {
-    let Ok(strategy_id) = strategy_id.parse::<i64>() else {
-        return Ok(None);
-    };
-    let pool = PgPoolOptions::new()
-        .max_connections(1)
-        .connect(database_url)
-        .await
-        .map_err(|error| error.to_string())?;
-    let row = sqlx::query(
-        r#"
-        SELECT
-            id::text AS id,
-            name,
-            code,
-            explanation,
-            status,
-            session_id,
-            user_id,
-            pair,
-            timeframe,
-            created_at::text AS created_at,
-            updated_at::text AS updated_at
-        FROM strategies
-        WHERE user_id = $1 AND id = $2 AND status <> 'DELETED'
-        "#,
-    )
-    .bind(user_id)
-    .bind(strategy_id)
-    .fetch_optional(&pool)
-    .await
-    .map_err(|error| error.to_string())?;
-
-    row.map(strategy_record_from_row).transpose()
-}
-
-async fn update_db_strategy(
-    database_url: &str,
-    user_id: &str,
-    strategy_id: &str,
-    update: &UpdateStrategyRequest,
-) -> Result<Option<StrategyRecord>, String> {
-    let Ok(strategy_id) = strategy_id.parse::<i64>() else {
-        return Ok(None);
-    };
-    let pool = PgPoolOptions::new()
-        .max_connections(1)
-        .connect(database_url)
-        .await
-        .map_err(|error| error.to_string())?;
-    let row = sqlx::query(
-        r#"
-        UPDATE strategies
-        SET
-            name = COALESCE($3, name),
-            code = COALESCE($4, code),
-            explanation = COALESCE($5, explanation),
-            status = COALESCE($6, status),
-            pair = COALESCE($7, pair),
-            timeframe = COALESCE($8, timeframe),
-            updated_at = NOW()
-        WHERE user_id = $1 AND id = $2 AND status <> 'DELETED'
-        RETURNING
-            id::text AS id,
-            name,
-            code,
-            explanation,
-            status,
-            session_id,
-            user_id,
-            pair,
-            timeframe,
-            created_at::text AS created_at,
-            updated_at::text AS updated_at
-        "#,
-    )
-    .bind(user_id)
-    .bind(strategy_id)
-    .bind(update.name.clone())
-    .bind(update.code.clone())
-    .bind(update.explanation.clone())
-    .bind(update.status.clone())
-    .bind(update.pair.clone())
-    .bind(update.timeframe.clone())
-    .fetch_optional(&pool)
-    .await
-    .map_err(|error| error.to_string())?;
-
-    row.map(strategy_record_from_row).transpose()
-}
-
-async fn soft_delete_db_strategy(
-    database_url: &str,
-    user_id: &str,
-    strategy_id: &str,
-) -> Result<Option<DeleteStrategyResponse>, String> {
-    let Ok(strategy_id_num) = strategy_id.parse::<i64>() else {
-        return Ok(None);
-    };
-    let pool = PgPoolOptions::new()
-        .max_connections(1)
-        .connect(database_url)
-        .await
-        .map_err(|error| error.to_string())?;
-    let row = sqlx::query(
-        r#"
-        UPDATE strategies
-        SET status = 'DELETED', updated_at = NOW()
-        WHERE user_id = $1 AND id = $2 AND status <> 'DELETED'
-        RETURNING id::text AS id, status
-        "#,
-    )
-    .bind(user_id)
-    .bind(strategy_id_num)
-    .fetch_optional(&pool)
-    .await
-    .map_err(|error| error.to_string())?;
-
-    Ok(row.map(|row| DeleteStrategyResponse {
-        strategy_id: row.try_get("id").unwrap_or_default(),
-        status: row
-            .try_get::<String, _>("status")
-            .unwrap_or_else(|_| "DELETED".to_string()),
-    }))
-}
-
-async fn load_db_strategies_with_pool(
     pool: &sqlx::PgPool,
     user_id: &str,
 ) -> Result<Vec<StrategyRecord>, String> {
@@ -352,7 +172,7 @@ async fn load_db_strategies_with_pool(
     rows.into_iter().map(strategy_record_from_row).collect()
 }
 
-async fn load_db_strategy_with_pool(
+async fn load_db_strategy(
     pool: &sqlx::PgPool,
     user_id: &str,
     strategy_id: &str,
@@ -387,7 +207,7 @@ async fn load_db_strategy_with_pool(
     row.map(strategy_record_from_row).transpose()
 }
 
-async fn update_db_strategy_with_pool(
+async fn update_db_strategy(
     pool: &sqlx::PgPool,
     user_id: &str,
     strategy_id: &str,
@@ -437,7 +257,7 @@ async fn update_db_strategy_with_pool(
     row.map(strategy_record_from_row).transpose()
 }
 
-async fn soft_delete_db_strategy_with_pool(
+async fn soft_delete_db_strategy(
     pool: &sqlx::PgPool,
     user_id: &str,
     strategy_id: &str,

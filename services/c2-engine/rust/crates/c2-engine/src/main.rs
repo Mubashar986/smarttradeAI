@@ -22,7 +22,17 @@ async fn main() {
     let listener = TcpListener::bind(&address)
         .await
         .unwrap_or_else(|error| panic!("failed to bind {address}: {error}"));
+    let app_env = std::env::var("APP_ENV").ok();
+    let is_production = app_env.as_deref()
+        .map(|s| s.eq_ignore_ascii_case("production"))
+        .unwrap_or(false);
+
     let database_url = std::env::var("DATABASE_URL").ok().filter(|s| !s.is_empty());
+
+    if is_production && database_url.is_none() {
+        tracing::error!("FATAL: DATABASE_URL environment variable is missing or empty under production profile (APP_ENV=production)!");
+        std::process::exit(1);
+    }
     let pool = if let Some(url) = database_url {
         tracing::info!("connecting to PostgreSQL database...");
         let pool = sqlx::postgres::PgPoolOptions::new()
@@ -30,6 +40,11 @@ async fn main() {
             .connect(&url)
             .await
             .unwrap_or_else(|err| panic!("failed to connect to database {url}: {err}"));
+        tracing::info!("running PostgreSQL schema migrations...");
+        sqlx::migrate!("../../../plugins/smarttrade-mql5/db/migrations")
+            .run(&pool)
+            .await
+            .unwrap_or_else(|err| panic!("failed to run database migrations: {err}"));
         Some(pool)
     } else {
         tracing::warn!("DATABASE_URL is not set — falling back to local file storage mode");

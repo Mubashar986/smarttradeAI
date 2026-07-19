@@ -1,5 +1,6 @@
--- SmartTradeAI - Database Schema
--- Creates durable identity, session, task, strategy, and audit tables.
+-- SmartTradeAI - Core relational schema.
+-- Keep this migration aligned with ../init.sql, which Docker uses only for
+-- first-run PostgreSQL bootstrap.
 
 CREATE TABLE IF NOT EXISTS users (
     id VARCHAR(255) PRIMARY KEY,
@@ -48,7 +49,6 @@ CREATE TABLE IF NOT EXISTS strategies (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Indexes for fast lookups
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_updated_at ON sessions(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_tasks_session_id ON tasks(session_id);
@@ -59,7 +59,6 @@ CREATE INDEX IF NOT EXISTS idx_strategies_status ON strategies(status);
 CREATE INDEX IF NOT EXISTS idx_strategies_session_id ON strategies(session_id);
 CREATE INDEX IF NOT EXISTS idx_strategies_user_status ON strategies(user_id, status);
 
--- Audit log for strategy state transitions
 CREATE TABLE IF NOT EXISTS strategy_audit_log (
     id SERIAL PRIMARY KEY,
     strategy_id INTEGER REFERENCES strategies(id),

@@ -8,7 +8,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
-use sqlx::postgres::PgPoolOptions;
 use tokio::runtime::{Builder as RuntimeBuilder, Runtime as TokioRuntime};
 use uuid::Uuid;
 
@@ -981,8 +980,8 @@ async fn save_strategy_with_config_async(
     config: &SmartTradeToolConfig,
 ) -> SaveStrategyResult {
     if let Some(ref pool) = config.pool {
-        match persist_strategy_postgres_with_pool(request, pool).await {
-            Ok(strategy_id) => return SaveStrategyResult {
+        match persist_strategy_postgres(request, pool).await {
+            Ok(strategy_id) => SaveStrategyResult {
                 success: true,
                 strategy_id: Some(strategy_id),
                 status: Some(request.status.clone()),
@@ -990,7 +989,7 @@ async fn save_strategy_with_config_async(
                 file_path: None,
                 error: None,
             },
-            Err(error) => return SaveStrategyResult {
+            Err(error) => SaveStrategyResult {
                 success: false,
                 strategy_id: None,
                 status: None,
@@ -999,34 +998,12 @@ async fn save_strategy_with_config_async(
                 error: Some(error),
             },
         }
-    }
-
-    match &config.database_url {
-        Some(database_url) if !database_url.is_empty() => {
-            match persist_strategy_postgres_async(request, database_url).await {
-                Ok(strategy_id) => SaveStrategyResult {
-                    success: true,
-                    strategy_id: Some(strategy_id),
-                    status: Some(request.status.clone()),
-                    storage: "postgresql".to_string(),
-                    file_path: None,
-                    error: None,
-                },
-                Err(error) => SaveStrategyResult {
-                    success: false,
-                    strategy_id: None,
-                    status: None,
-                    storage: "postgresql_error".to_string(),
-                    file_path: None,
-                    error: Some(error),
-                },
-            }
-        }
-        _ => persist_strategy_local(request, &config.strategies_dir),
+    } else {
+        persist_strategy_local(request, &config.strategies_dir)
     }
 }
 
-async fn persist_strategy_postgres_with_pool(
+async fn persist_strategy_postgres(
     request: &SaveStrategyRequest,
     pool: &sqlx::PgPool,
 ) -> Result<String, String> {
@@ -1048,38 +1025,6 @@ async fn persist_strategy_postgres_with_pool(
     .bind(&request.pair)
     .bind(&request.timeframe)
     .fetch_one(pool)
-    .await
-    .map_err(|error| error.to_string())?;
-    Ok(strategy_id.to_string())
-}
-
-async fn persist_strategy_postgres_async(
-    request: &SaveStrategyRequest,
-    database_url: &str,
-) -> Result<String, String> {
-    let pool = PgPoolOptions::new()
-        .max_connections(1)
-        .connect(database_url)
-        .await
-        .map_err(|error| error.to_string())?;
-    let strategy_id: i32 = sqlx::query_scalar(
-        r#"
-        INSERT INTO strategies
-            (name, code, explanation, status, session_id, user_id, pair, timeframe, created_at, updated_at)
-        VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-        RETURNING id
-        "#,
-    )
-    .bind(&request.strategy_name)
-    .bind(&request.code)
-    .bind(&request.explanation)
-    .bind(&request.status)
-    .bind(&request.session_id)
-    .bind(&request.user_id)
-    .bind(&request.pair)
-    .bind(&request.timeframe)
-    .fetch_one(&pool)
     .await
     .map_err(|error| error.to_string())?;
     Ok(strategy_id.to_string())
@@ -1346,6 +1291,7 @@ fn save_request_from_value(payload: &JsonValue) -> Result<SaveStrategyRequest, T
     })
 }
 
+#[allow(dead_code)]
 fn parameter_lines_from_json(parameters: Option<&JsonObject>) -> String {
     let mut lines = Vec::new();
     if let Some(parameters) = parameters {
@@ -1374,6 +1320,7 @@ fn parameter_lines_from_json(parameters: Option<&JsonObject>) -> String {
     }
 }
 
+#[allow(dead_code)]
 fn truncate_content(content: &str, max_chars: usize) -> String {
     let mut truncated = content.chars().take(max_chars).collect::<String>();
     if content.chars().count() > max_chars {
@@ -1502,10 +1449,12 @@ fn capture_preserving_case(text: &str, patterns: &[&str]) -> Option<String> {
     None
 }
 
+#[allow(dead_code)]
 fn sanitize_comment(value: &str) -> String {
     value.replace('\n', " ").replace('\r', " ").trim().to_string()
 }
 
+#[allow(dead_code)]
 fn escape_mql5_string(value: &str) -> String {
     value.replace('"', "\\\"")
 }
