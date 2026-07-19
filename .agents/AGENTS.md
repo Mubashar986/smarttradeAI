@@ -7,7 +7,7 @@ For every task selected from the roadmap, the agent must strictly execute the fo
 ## Stage 1: Understanding Artifact
 Create a detailed, conceptual documentation file containing:
 1.  **Why & What:** Explain why we are doing the task, what it is, and how it works conceptually.
-2.  **Diagrams:** Use diagrams to visualize the core concepts.
+2.  **Diagrams:** Use native `mermaid` sequence/flow charts AND generate a high-quality, modern visual architecture infographic/diagram using the `generate_image` tool. Save the image in the artifact directory, and embed it at the top of the understanding document.
 3.  **Language/Stack Context:** Explain how the concept is implemented in Rust (`sqlx`, `tokio`, etc.).
 4.  **Alternatives:** List and explain at least five (5) alternative approaches.
 5.  **Rationale:** Detail why this is standard in production systems, why we chose it for SmartTradeAI, the problems it solves, and the negative consequences if we do not implement it.
