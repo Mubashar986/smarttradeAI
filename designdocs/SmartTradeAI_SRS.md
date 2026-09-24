@@ -80,7 +80,7 @@ Remaining functional items:
 ## 6. Data model
 
 - Primary persisted entity: `strategies` (see `services/c2-engine/plugins/smarttrade-mql5/db/init.sql`)
-  - `id` (serial), `name`, `code` (text), `explanation`, `status` (DRAFT/GENERATED/etc), `session_id`, `user_id`, `pair`, `timeframe`, `created_at`, `updated_at`.
+  - `id` (UUID v4 string), `name`, `code` (text), `explanation`, `status` (DRAFT/GENERATED/etc), `session_id`, `user_id`, `pair`, `timeframe`, `created_at`, `updated_at`.
 
 ## 7. Interfaces / API (summary)
 
@@ -142,13 +142,13 @@ curl -s -X POST http://localhost:3000/v1/sessions | jq
 # take session_id from response, then:
 curl -s -X POST -H "Content-Type: application/json" \
   -d '{"text":"Create an EA: SMA 50 crosses SMA 200 on EURUSD H1, stop loss 50 pips"}' \
-  http://localhost:3000/v1/sessions/session-1/turn | jq
+  http://localhost:3000/v1/sessions/550e8400-e29b-41d4-a716-446655440000/turn | jq
 ```
 
 3. Watch SSE events:
 
 ```bash
-curl -N http://localhost:3000/v1/sessions/session-1/events
+curl -N http://localhost:3000/v1/sessions/550e8400-e29b-41d4-a716-446655440000/events
 ```
 
 Notes:

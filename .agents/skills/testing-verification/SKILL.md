@@ -58,21 +58,21 @@ Each category must contain **at least 10 test cases** with specific inputs, expe
 ---
 
 #### Category A: Unit Tests (Compilation & Static Analysis)
-These verify that the code compiles correctly and passes all existing unit tests.
+These verify that the code compiles correctly and passes all existing unit tests using Docker (no local Rust installation required on the host PC).
 
 ```markdown
-| ID | Test Case | Command | Expected Output |
-|----|-----------|---------|-----------------|
-| U-01 | Clean compilation (no warnings) | `cargo check` | 0 errors, 0 warnings |
-| U-02 | All unit tests pass | `cargo test` | All tests pass |
-| U-03 | No unused imports | `cargo check` | No "unused import" warnings |
-| U-04 | No unused variables | `cargo check` | No "unused variable" warnings |
-| U-05 | No dead code warnings | `cargo check` | No "never used" warnings |
-| U-06 | Clippy lint pass | `cargo clippy` | No lint violations |
-| U-07 | Format compliance | `cargo fmt --check` | No formatting diffs |
-| U-08 | Test target compiles | `cargo test --no-run` | Compiles without errors |
-| U-09 | Release build compiles | `cargo build --release` | Compiles in release mode |
-| U-10 | Doc comments valid | `cargo doc --no-deps` | No doc warning errors |
+| ID | Test Case | Docker Command | Expected Output |
+|----|-----------|----------------|-----------------|
+| U-01 | Clean compilation (no warnings) | `docker compose --profile dev run --rm rust-dev cargo check` | 0 errors, 0 warnings |
+| U-02 | All unit tests pass | `docker compose --profile dev run --rm rust-dev cargo test` | All tests pass |
+| U-03 | No unused imports | `docker compose --profile dev run --rm rust-dev cargo check` | No "unused import" warnings |
+| U-04 | No unused variables | `docker compose --profile dev run --rm rust-dev cargo check` | No "unused variable" warnings |
+| U-05 | No dead code warnings | `docker compose --profile dev run --rm rust-dev cargo check` | No "never used" warnings |
+| U-06 | Clippy lint pass | `docker compose --profile dev run --rm rust-dev cargo clippy` | No lint violations |
+| U-07 | Format compliance | `docker compose --profile dev run --rm rust-dev cargo fmt --check` | No formatting diffs |
+| U-08 | Test target compiles | `docker compose --profile dev run --rm rust-dev cargo test --no-run` | Compiles without errors |
+| U-09 | Release build compiles | `docker compose --profile dev run --rm rust-dev cargo build --release` | Compiles in release mode |
+| U-10 | Doc comments valid | `docker compose --profile dev run --rm rust-dev cargo doc --no-deps` | No doc warning errors |
 ```
 
 ---

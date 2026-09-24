@@ -72,6 +72,10 @@ async fn enqueue_turn(
     context.task_id = Some(task_id.clone());
     let message = ConversationMessage::user_text(payload.text.clone());
     let broadcaster = {
+        let _ensure_hydrated = state
+            .live_session(session_id)
+            .await
+            .ok_or_else(|| not_found(format!("session `{session_id}` not found")))?;
         let mut sessions = state.sessions.write().await;
         let session = sessions
             .get_mut(session_id)
@@ -80,14 +84,36 @@ async fn enqueue_turn(
         session.events.clone()
     };
 
+    let task = TurnTask::queued(
+        task_id.clone(),
+        session_id.to_string(),
+        payload.message_type,
+        context.clone(),
+    );
+    if let Some(pool) = &state.pool {
+        let persisted = async {
+            let conversation = {
+                let sessions = state.sessions.read().await;
+                sessions.get(session_id).map(|s| s.conversation.clone())
+            };
+            if let Some(conversation) = conversation {
+                crate::persistence::update_session_conversation(pool, session_id, &conversation).await?;
+            }
+            crate::persistence::insert_task(pool, &task).await
+        };
+        if let Err(error) = persisted.await {
+            tracing::error!(task_id = %task_id, error = %error, "failed to persist enqueued turn");
+            state.tasks.write().await.remove(&task_id);
+            if let Some(session) = state.sessions.write().await.get_mut(session_id) {
+                session.conversation.messages.pop();
+            }
+            return Err(crate::state::internal_error("failed to persist turn".to_string()));
+        }
+    }
+
     state.tasks.write().await.insert(
         task_id.clone(),
-        TurnTask::queued(
-            task_id.clone(),
-            session_id.to_string(),
-            payload.message_type,
-            context.clone(),
-        ),
+        task,
     );
 
     let _ = broadcaster.send(SessionEvent::Message {
@@ -113,6 +139,11 @@ async fn enqueue_turn(
         .is_err()
     {
         state.tasks.write().await.remove(&task_id);
+        if let Some(pool) = &state.pool {
+            if let Err(error) = crate::persistence::delete_task(pool, &task_id).await {
+                tracing::error!(task_id = %task_id, error = %error, "failed to delete unpersisted task row");
+            }
+        }
         return Err((
             StatusCode::SERVICE_UNAVAILABLE,
             Json(ErrorResponse {
@@ -134,16 +165,29 @@ pub(crate) async fn get_task(
     State(state): State<AppState>,
     Path(task_id): Path<TaskId>,
 ) -> ApiResult<Json<TaskStatusResponse>> {
-    let tasks = state.tasks.read().await;
-    let task = tasks
-        .get(&task_id)
-        .ok_or_else(|| not_found(format!("task `{task_id}` not found")))?;
-    Ok(Json(TaskStatusResponse {
-        task_id: task.id.clone(),
-        status: task.status,
-        result_type: task.result_type,
-        payload: task.payload.clone(),
-    }))
+    {
+        let tasks = state.tasks.read().await;
+        if let Some(task) = tasks.get(&task_id) {
+            return Ok(Json(TaskStatusResponse {
+                task_id: task.id.clone(),
+                status: task.status,
+                result_type: task.result_type,
+                payload: task.payload.clone(),
+            }));
+        }
+    }
+    if let Some(pool) = &state.pool {
+        if let Some(task) = crate::persistence::load_task(pool, &task_id)
+            .await
+            .map_err(|error| {
+                tracing::error!(task_id = %task_id, error = %error, "failed to load task from database");
+                crate::state::internal_error("failed to load task".to_string())
+            })?
+        {
+            return Ok(Json(task));
+        }
+    }
+    Err(not_found(format!("task `{task_id}` not found")))
 }
 
 pub async fn run_turn_worker(state: AppState, mut turn_rx: mpsc::UnboundedReceiver<TurnRequest>) {
@@ -260,9 +304,9 @@ async fn process_turn(state: AppState, request: TurnRequest) -> Result<(), Strin
 
     // 1. Snapshot the current session conversation.
     let session_snapshot = {
-        let sessions = state.sessions.read().await;
-        let session = sessions
-            .get(&request.session_id)
+        let session = state
+            .live_session(&request.session_id)
+            .await
             .ok_or_else(|| format!("session `{}` not found", request.session_id))?;
         session.conversation.clone()
     };
@@ -552,7 +596,18 @@ async fn process_turn(state: AppState, request: TurnRequest) -> Result<(), Strin
     {
         let mut sessions = state.sessions.write().await;
         if let Some(session) = sessions.get_mut(&request.session_id) {
-            session.conversation = updated_session;
+            session.conversation = updated_session.clone();
+        }
+    }
+    if let Some(pool) = &state.pool {
+        if let Err(error) = crate::persistence::update_session_conversation(
+            pool,
+            &request.session_id,
+            &updated_session,
+        )
+        .await
+        {
+            tracing::error!(session_id = %request.session_id, error = %error, "failed to persist conversation");
         }
     }
 

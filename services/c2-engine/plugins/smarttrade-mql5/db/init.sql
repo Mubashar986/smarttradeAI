@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS tasks (
 );
 
 CREATE TABLE IF NOT EXISTS strategies (
-    id SERIAL PRIMARY KEY,
+    id VARCHAR(255) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     code TEXT NOT NULL,
     explanation TEXT DEFAULT '',
@@ -62,7 +62,7 @@ CREATE INDEX IF NOT EXISTS idx_strategies_user_status ON strategies(user_id, sta
 -- Audit log for strategy state transitions
 CREATE TABLE IF NOT EXISTS strategy_audit_log (
     id SERIAL PRIMARY KEY,
-    strategy_id INTEGER REFERENCES strategies(id),
+    strategy_id VARCHAR(255) REFERENCES strategies(id),
     old_status VARCHAR(50),
     new_status VARCHAR(50),
     changed_by VARCHAR(255) DEFAULT 'c2-engine',

@@ -1,10 +1,12 @@
 mod llm_bridge;
 mod middleware;
 mod mql5_extractor;
+mod persistence;
 mod routes;
 mod state;
 
 // Re-export the public API consumed by the c2-engine binary crate.
+pub use persistence::reconcile_interrupted_tasks;
 pub use routes::turns::run_turn_worker;
 pub use state::AppState;
 
@@ -85,6 +87,7 @@ mod tests {
     use tokio::net::TcpListener;
     use tokio::task::JoinHandle;
     use tokio::time::{sleep, timeout};
+    use uuid::Uuid;
 
     struct TestServer {
         address: SocketAddr,
@@ -277,11 +280,11 @@ mod tests {
             .expect("details response should parse");
 
         // then
-        assert_eq!(created.session_id, "session-1");
+        assert!(Uuid::parse_str(&created.session_id).is_ok());
         assert_eq!(sessions.sessions.len(), 1);
         assert_eq!(sessions.sessions[0].id, created.session_id);
         assert_eq!(sessions.sessions[0].message_count, 0);
-        assert_eq!(details.id, "session-1");
+        assert_eq!(details.id, created.session_id);
         assert!(details.session.messages.is_empty());
     }
 
@@ -352,7 +355,7 @@ mod tests {
             .await
             .expect("task response should parse");
 
-        assert_eq!(accepted.task_id, "task-1");
+        assert!(Uuid::parse_str(&accepted.task_id).is_ok());
         assert_eq!(accepted.status, TaskStatus::Queued);
         assert_eq!(task.task_id, accepted.task_id);
         assert_eq!(task.status, TaskStatus::Queued);
@@ -400,7 +403,7 @@ mod tests {
             .await
             .expect("response should parse");
 
-        assert_eq!(created.session_id, "session-1");
+        assert!(Uuid::parse_str(&created.session_id).is_ok());
 
         std::env::remove_var("C2_JWT_SECRET");
     }
@@ -548,7 +551,7 @@ mod tests {
         // then
         assert_eq!(send_status, reqwest::StatusCode::NO_CONTENT);
         assert!(snapshot_frame.contains("event: snapshot"));
-        assert!(snapshot_frame.contains("\"session_id\":\"session-1\""));
+        assert!(snapshot_frame.contains(&format!("\"session_id\":\"{}\"", created.session_id)));
         assert!(message_frame.contains("event: message"));
         assert!(message_frame.contains("hello from test"));
         assert_eq!(details.session.messages.len(), 1);

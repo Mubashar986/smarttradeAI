@@ -18,8 +18,16 @@ use crate::state::{
 
 pub(crate) async fn create_session(
     State(state): State<AppState>,
-) -> (StatusCode, Json<CreateSessionResponse>) {
+) -> ApiResult<(StatusCode, Json<CreateSessionResponse>)> {
     let session_id = state.allocate_session_id();
+    if let Some(pool) = &state.pool {
+        crate::persistence::insert_session(pool, &session_id)
+            .await
+            .map_err(|error| {
+                tracing::error!(session_id = %session_id, error = %error, "failed to persist new session");
+                crate::state::internal_error("failed to persist session".to_string())
+            })?;
+    }
     let session = Session::new(session_id.clone());
 
     state
@@ -29,13 +37,22 @@ pub(crate) async fn create_session(
         .insert(session_id.clone(), session);
     let _ = state.turn_lock_for(&session_id).await;
 
-    (
+    Ok((
         StatusCode::CREATED,
         Json(CreateSessionResponse { session_id }),
-    )
+    ))
 }
 
-pub(crate) async fn list_sessions(State(state): State<AppState>) -> Json<ListSessionsResponse> {
+pub(crate) async fn list_sessions(
+    State(state): State<AppState>,
+) -> ApiResult<Json<ListSessionsResponse>> {
+    if let Some(pool) = &state.pool {
+        let summaries = crate::persistence::list_sessions(pool).await.map_err(|error| {
+            tracing::error!(error = %error, "failed to list sessions from database");
+            crate::state::internal_error("failed to list sessions".to_string())
+        })?;
+        return Ok(Json(ListSessionsResponse { sessions: summaries }));
+    }
     let sessions = state.sessions.read().await;
     let mut summaries = sessions
         .values()
@@ -47,18 +64,18 @@ pub(crate) async fn list_sessions(State(state): State<AppState>) -> Json<ListSes
         .collect::<Vec<_>>();
     summaries.sort_by(|left, right| left.id.cmp(&right.id));
 
-    Json(ListSessionsResponse {
+    Ok(Json(ListSessionsResponse {
         sessions: summaries,
-    })
+    }))
 }
 
 pub(crate) async fn get_session(
     State(state): State<AppState>,
     Path(id): Path<SessionId>,
 ) -> ApiResult<Json<SessionDetailsResponse>> {
-    let sessions = state.sessions.read().await;
-    let session = sessions
-        .get(&id)
+    let session = state
+        .live_session(&id)
+        .await
         .ok_or_else(|| not_found(format!("session `{id}` not found")))?;
 
     Ok(Json(SessionDetailsResponse {
@@ -73,9 +90,9 @@ pub(crate) async fn stream_session_events(
     Path(id): Path<SessionId>,
 ) -> ApiResult<impl IntoResponse> {
     let (snapshot, mut receiver) = {
-        let sessions = state.sessions.read().await;
-        let session = sessions
-            .get(&id)
+        let session = state
+            .live_session(&id)
+            .await
             .ok_or_else(|| not_found(format!("session `{id}` not found")))?;
         (
             SessionEvent::Snapshot {
@@ -113,9 +130,9 @@ pub(crate) async fn stream_session_websocket(
     Path(id): Path<SessionId>,
 ) -> ApiResult<impl IntoResponse> {
     let (snapshot, receiver) = {
-        let sessions = state.sessions.read().await;
-        let session = sessions
-            .get(&id)
+        let session = state
+            .live_session(&id)
+            .await
             .ok_or_else(|| not_found(format!("session `{id}` not found")))?;
         (
             SessionEvent::Snapshot {

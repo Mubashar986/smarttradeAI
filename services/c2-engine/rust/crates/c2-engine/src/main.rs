@@ -53,6 +53,16 @@ async fn main() {
 
     let (state, turn_rx) = AppState::new(pool);
 
+    if let Some(pool) = &state.pool {
+        match server::reconcile_interrupted_tasks(pool).await {
+            Ok(count) if count > 0 => {
+                tracing::warn!(count, "marked interrupted tasks as failed after restart")
+            }
+            Ok(_) => tracing::info!("no interrupted tasks to reconcile"),
+            Err(error) => tracing::error!(error = %error, "failed to reconcile interrupted tasks"),
+        }
+    }
+
     tracing::info!(
         model = %state.llm_model,
         "starting turn worker"
