@@ -1,0 +1,20 @@
+{
+  "version": "1.0.0",
+  "purpose": "Routes UI work to the smallest compatible skill set and artifacts.",
+  "surface_routes": {
+    "brand-system": {"required_before_edit": ["ui-brief.md", "brand-direction.md", "design.md"], "required_before_complete": ["verification.md"]},
+    "web-marketing-ui": {"required_before_edit": ["ui-brief.md", "design-read.json", "web-reference-manifest.json", "web-reference-analysis.md", "design.md"], "required_before_complete": ["ui-verification.md", "verification.md"], "style_selection": ["gpt-taste", "high-end-visual-design", "minimalist-ui", "industrial-brutalist-ui"]},
+    "web-product-ui": {"required_before_edit": ["ui-brief.md", "design.md", "hci-interaction-spec.md", "backend-requirements.md"], "required_before_complete": ["ui-verification.md", "verification.md"], "style_selection": ["minimalist-ui", "industrial-brutalist-ui"]},
+    "responsive-mobile-web-ui": {"required_before_edit": ["ui-brief.md", "responsive-spec.md", "pact-analysis.md", "design.md", "backend-requirements.md"], "required_before_complete": ["ui-verification.md", "verification.md"], "style_selection": ["high-end-visual-design", "minimalist-ui"]},
+    "native-mobile-ui": {"required_before_edit": ["ui-brief.md", "mobile-flow.md", "pact-analysis.md", "mobile-reference-manifest.json", "mobile-implementation-plan.md", "design.md", "backend-requirements.md"], "required_before_complete": ["mobile-ui-verification.md", "verification.md"], "platforms": ["swiftui", "jetpack-compose", "react-native", "flutter"]},
+    "ui-redesign": {"required_before_edit": ["ui-brief.md", "redesign-audit.md", "heuristic-audit.md", "design.md"], "required_before_complete": ["ui-verification.md", "verification.md"], "style_selection": ["high-end-visual-design", "minimalist-ui", "industrial-brutalist-ui"]},
+    "ui-audit": {"required_before_edit": ["ui-brief.md", "heuristic-audit.md", "cognitive-walkthrough.md"], "required_before_complete": ["ui-verification.md", "verification.md"]},
+    "stitch-ui": {"required_before_edit": ["ui-brief.md", "DESIGN.md", "design.md"], "required_before_complete": ["ui-verification.md", "verification.md"]}
+  },
+  "rules": {
+    "style_selection": "Choose zero or one compatible style skill. Style skills are alternatives, never a cumulative stack.",
+    "image_first": "Required only for web-marketing-ui when image generation is available, and for native-mobile-ui design flows. It does not block small fixes or prescribed components.",
+    "mobile": "A native-mobile-ui task must declare one target platform and respect its safe areas, navigation patterns, touch targets, reduced-motion behavior, and dynamic text scaling.",
+    "product_ui": "Do not use design-taste-frontend as the primary design authority for dashboards, data tables, wizards, or native apps because that skill explicitly excludes them. Use HCI foundations (pact-context-analysis, hci-usability-principles, task-modeling-goms-klm) as the primary engineering authority."
+  }
+}

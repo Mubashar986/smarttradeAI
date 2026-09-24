@@ -1,0 +1,13 @@
+---
+description: Heisenberg OS bootstrap, task selection, and artifact gates.
+alwaysApply: true
+---
+
+Read `AGENTS.md` before making changes. This repository uses
+`.heisenberg/policy.json` and `.heisenberg/skills.json` as the machine-readable
+workflow contract. Load only skills selected by the active task manifest and
+record required artifacts under `.heisenberg/artifacts/<task-id>/`.
+
+Do not claim a task is complete without a current receipt and validation
+evidence. Treat unavailable MCP tools as unavailable; never fabricate graph
+analysis or tool output.

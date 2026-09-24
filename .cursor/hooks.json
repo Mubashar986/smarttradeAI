@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "python scripts/heisenberg_guard.py hook --host cursor --event session"
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": "python scripts/heisenberg_guard.py hook --host cursor --event pre-tool",
+        "matcher": "Write",
+        "failClosed": false
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": "python scripts/heisenberg_guard.py hook --host cursor --event post-edit",
+        "matcher": "Write"
+      }
+    ]
+  }
+}

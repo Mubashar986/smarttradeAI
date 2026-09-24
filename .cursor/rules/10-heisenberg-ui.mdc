@@ -1,0 +1,11 @@
+---
+description: Require the Muses skill chain for UI work.
+globs: "**/*.{css,scss,html,tsx,jsx,vue,svelte}"
+alwaysApply: false
+---
+
+For a task that changes a user-facing interface, follow the task manifest's UI
+skill chain: HCI foundations (`.opencode/skills/` HCI skills) for affordances, feedback, and accessibility;
+Picasso for tokens and visual contract; Escher for real data contracts; and Vermeer for
+implementation and 6 interactive states. Do not invent backend responses; record missing
+fields in the task artifact.

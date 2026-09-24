@@ -1,0 +1,35 @@
+{
+  "task_id": "TASK-UI-1",
+  "task_type": "web-marketing-ui",
+  "ui_surface": "web-marketing-ui",
+  "status": "planned",
+  "selected_skills": [
+    "concept-to-code-bridge",
+    "codebase-design",
+    "design-taste-frontend",
+    "imagegen-frontend-web",
+    "image-to-code",
+    "picasso",
+    "vermeer",
+    "testing-verification"
+  ],
+  "style_skill": "minimalist-ui",
+  "required_artifacts": [
+    "ui-brief.md",
+    "design-read.json",
+    "web-reference-manifest.json",
+    "web-reference-analysis.md",
+    "design.md",
+    "ui-verification.md",
+    "verification.md"
+  ],
+  "required_before_edit": [
+    "ui-brief.md",
+    "design-read.json",
+    "web-reference-manifest.json",
+    "web-reference-analysis.md",
+    "design.md"
+  ],
+  "files_in_scope": [],
+  "requires_graperoot": false
+}

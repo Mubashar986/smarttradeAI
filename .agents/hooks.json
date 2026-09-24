@@ -1,0 +1,48 @@
+{
+  "heisenberg-session-context": {
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "python scripts/heisenberg_guard.py hook --host antigravity --event pre-invocation",
+        "timeout": 5
+      }
+    ]
+  },
+  "heisenberg-write-gate": {
+    "PreToolUse": [
+      {
+        "matcher": "write_to_file|replace_file_content|multi_replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python scripts/heisenberg_guard.py hook --host antigravity --event pre-tool",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "heisenberg-edit-audit": {
+    "PostToolUse": [
+      {
+        "matcher": "write_to_file|replace_file_content|multi_replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python scripts/heisenberg_guard.py hook --host antigravity --event post-edit",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "heisenberg-stop-check": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "python scripts/heisenberg_guard.py hook --host antigravity --event stop",
+        "timeout": 5
+      }
+    ]
+  }
+}

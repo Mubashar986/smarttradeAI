@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Heisenberg task manifest",
+  "type": "object",
+  "required": ["task_id", "task_type", "status", "selected_skills", "required_artifacts", "required_before_edit", "files_in_scope"],
+  "properties": {
+    "task_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "task_type": {"type": "string"},
+    "status": {"enum": ["planned", "approved", "implementing", "verifying", "complete", "blocked"]},
+    "selected_skills": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "required_artifacts": {"type": "array", "items": {"type": "string"}},
+    "required_before_edit": {"type": "array", "items": {"type": "string"}},
+    "files_in_scope": {"type": "array", "items": {"type": "string"}},
+    "requires_graperoot": {"type": "boolean"},
+    "ui_surface": {"type": "string"},
+    "style_skill": {"type": "string"},
+    "platform": {"enum": ["swiftui", "jetpack-compose", "react-native", "flutter"]}
+  },
+  "additionalProperties": true
+}
