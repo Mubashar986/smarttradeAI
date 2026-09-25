@@ -1,0 +1,453 @@
+{
+  "version": "3.0.0",
+  "skills": {
+    "roadmap-wbs-planner": {
+      "source": ".opencode/skills/roadmap-wbs-planner/SKILL.md",
+      "task_types": [
+        "greenfield",
+        "brownfield-onboarding",
+        "roadmap"
+      ],
+      "artifact": "roadmap.md"
+    },
+    "concept-to-code-bridge": {
+      "source": ".opencode/skills/concept-to-code-bridge/SKILL.md",
+      "task_types": [
+        "feature",
+        "refactor",
+        "bug",
+        "ui",
+        "algorithm"
+      ],
+      "artifact": "understanding.md"
+    },
+    "narrsistic-pluto": {
+      "source": ".opencode/skills/narrsistic-pluto/SKILL.md",
+      "task_types": [
+        "architecture",
+        "complex-bug",
+        "high-risk-refactor"
+      ],
+      "artifact": "architecture-analysis.md"
+    },
+    "codebase-design": {
+      "source": ".opencode/skills/codebase-design/SKILL.md",
+      "task_types": [
+        "feature",
+        "refactor",
+        "ui",
+        "algorithm"
+      ],
+      "artifact": "design.md"
+    },
+    "cs-domain-learning": {
+      "source": ".opencode/skills/cs-domain-learning/SKILL.md",
+      "task_types": [
+        "algorithm",
+        "concurrency",
+        "persistence",
+        "search",
+        "security-protocol",
+        "networking",
+        "performance"
+      ],
+      "artifact": "cs-concepts.md"
+    },
+    "picasso": {
+      "source": ".opencode/skills/picasso/SKILL.md",
+      "task_types": [
+        "ui"
+      ],
+      "artifact": "design-system.md"
+    },
+    "escher": {
+      "source": ".opencode/skills/escher/SKILL.md",
+      "task_types": [
+        "ui"
+      ],
+      "artifact": "backend-requirements.md"
+    },
+    "vermeer": {
+      "source": ".opencode/skills/vermeer/SKILL.md",
+      "task_types": [
+        "ui"
+      ],
+      "artifact": "ui-verification.md"
+    },
+    "testing-verification": {
+      "source": ".opencode/skills/testing-verification/SKILL.md",
+      "task_types": [
+        "feature",
+        "refactor",
+        "bug",
+        "ui",
+        "algorithm",
+        "architecture"
+      ],
+      "artifact": "verification.md"
+    },
+    "brandkit": {
+      "source": "UItasteskills/brandkit/SKILL.md",
+      "task_types": [
+        "brand-system"
+      ],
+      "artifact": "brand-direction.md"
+    },
+    "design-taste-frontend": {
+      "source": "UItasteskills/design-taste-frontend/SKILL.md",
+      "task_types": [
+        "web-marketing-ui",
+        "ui-redesign"
+      ],
+      "artifact": "design-read.json"
+    },
+    "design-taste-frontend-v1": {
+      "source": "UItasteskills/design-taste-frontend-v1/SKILL.md",
+      "task_types": [
+        "legacy-web-marketing-ui"
+      ],
+      "artifact": "design-read.json",
+      "status": "legacy"
+    },
+    "full-output-enforcement": {
+      "source": "UItasteskills/full-output-enforcement/SKILL.md",
+      "task_types": [
+        "complete-delivery"
+      ],
+      "artifact": "delivery-completeness.md"
+    },
+    "gpt-taste": {
+      "source": "UItasteskills/gpt-taste/SKILL.md",
+      "task_types": [
+        "web-marketing-ui"
+      ],
+      "artifact": "motion-plan.md",
+      "role": "optional-style"
+    },
+    "high-end-visual-design": {
+      "source": "UItasteskills/high-end-visual-design/SKILL.md",
+      "task_types": [
+        "web-marketing-ui",
+        "responsive-mobile-web-ui"
+      ],
+      "artifact": "visual-archetype.md",
+      "role": "optional-style"
+    },
+    "image-to-code": {
+      "source": "UItasteskills/image-to-code/SKILL.md",
+      "task_types": [
+        "web-marketing-ui"
+      ],
+      "artifact": "web-reference-analysis.md"
+    },
+    "imagegen-frontend-mobile": {
+      "source": "UItasteskills/imagegen-frontend-mobile/SKILL.md",
+      "task_types": [
+        "native-mobile-ui"
+      ],
+      "artifact": "mobile-reference-manifest.json"
+    },
+    "imagegen-frontend-web": {
+      "source": "UItasteskills/imagegen-frontend-web/SKILL.md",
+      "task_types": [
+        "web-marketing-ui"
+      ],
+      "artifact": "web-reference-manifest.json"
+    },
+    "industrial-brutalist-ui": {
+      "source": "UItasteskills/industrial-brutalist-ui/SKILL.md",
+      "task_types": [
+        "web-marketing-ui",
+        "web-product-ui"
+      ],
+      "artifact": "visual-archetype.md",
+      "role": "optional-style"
+    },
+    "minimalist-ui": {
+      "source": "UItasteskills/minimalist-ui/SKILL.md",
+      "task_types": [
+        "web-marketing-ui",
+        "web-product-ui",
+        "responsive-mobile-web-ui"
+      ],
+      "artifact": "visual-archetype.md",
+      "role": "optional-style"
+    },
+    "redesign-existing-projects": {
+      "source": "UItasteskills/redesign-existing-projects/SKILL.md",
+      "task_types": [
+        "ui-redesign"
+      ],
+      "artifact": "redesign-audit.md"
+    },
+    "stitch-design-taste": {
+      "source": "UItasteskills/stitch-design-taste/SKILL.md",
+      "task_types": [
+        "stitch-ui"
+      ],
+      "artifact": "DESIGN.md"
+    },
+    "mobile-app-implementation": {
+      "source": "UItasteskills/mobile-app-implementation/SKILL.md",
+      "task_types": [
+        "native-mobile-ui"
+      ],
+      "artifact": "mobile-implementation-plan.md"
+    },
+    "cognitive-walkthrough-evaluator": {
+      "source": ".opencode/skills/cognitive-walkthrough-evaluator/SKILL.md",
+      "task_types": [
+        "ui-audit",
+        "web-product-ui",
+        "onboarding-ui"
+      ],
+      "artifact": "cognitive-walkthrough.md"
+    },
+    "emotional-ux-interaction-design": {
+      "source": ".opencode/skills/emotional-ux-interaction-design/SKILL.md",
+      "task_types": [
+        "ui",
+        "web-marketing-ui",
+        "web-product-ui"
+      ],
+      "artifact": "emotional-ux-spec.md"
+    },
+    "empirical-usability-ab-testing": {
+      "source": ".opencode/skills/empirical-usability-ab-testing/SKILL.md",
+      "task_types": [
+        "experimentation",
+        "ui-verification"
+      ],
+      "artifact": "usability-experiment.md"
+    },
+    "hci-usability-principles": {
+      "source": ".opencode/skills/hci-usability-principles/SKILL.md",
+      "task_types": [
+        "ui",
+        "web-product-ui",
+        "ui-redesign",
+        "responsive-mobile-web-ui",
+        "native-mobile-ui"
+      ],
+      "artifact": "hci-interaction-spec.md"
+    },
+    "heuristic-evaluation-audit": {
+      "source": ".opencode/skills/heuristic-evaluation-audit/SKILL.md",
+      "task_types": [
+        "ui-audit",
+        "ui-redesign"
+      ],
+      "artifact": "heuristic-audit.md"
+    },
+    "pact-context-analysis": {
+      "source": ".opencode/skills/pact-context-analysis/SKILL.md",
+      "task_types": [
+        "greenfield",
+        "user-research",
+        "architecture",
+        "responsive-mobile-web-ui",
+        "native-mobile-ui"
+      ],
+      "artifact": "pact-analysis.md"
+    },
+    "persona-scenario-design": {
+      "source": ".opencode/skills/persona-scenario-design/SKILL.md",
+      "task_types": [
+        "greenfield",
+        "user-research",
+        "web-product-ui"
+      ],
+      "artifact": "personas-and-scenarios.md"
+    },
+    "task-modeling-goms-klm": {
+      "source": ".opencode/skills/task-modeling-goms-klm/SKILL.md",
+      "task_types": [
+        "workflow-optimization",
+        "web-product-ui"
+      ],
+      "artifact": "task-model-goms.md"
+    },
+    "user-research-thematic-analysis": {
+      "source": ".opencode/skills/user-research-thematic-analysis/SKILL.md",
+      "task_types": [
+        "user-research"
+      ],
+      "artifact": "thematic-backlog.md"
+    },
+    "rust-learning-extraction": {
+      "source": ".opencode/skills/rust-learning-extraction/SKILL.md",
+      "task_types": [
+        "feature",
+        "algorithm",
+        "refactor"
+      ],
+      "artifact": "rust-learning.md",
+      "role": "project-specific"
+    }
+  },
+  "required_skill_sets": {
+    "feature": [
+      "concept-to-code-bridge",
+      "codebase-design",
+      "cs-domain-learning",
+      "testing-verification"
+    ],
+    "bug": [
+      "concept-to-code-bridge",
+      "cs-domain-learning",
+      "testing-verification"
+    ],
+    "refactor": [
+      "concept-to-code-bridge",
+      "codebase-design",
+      "cs-domain-learning",
+      "testing-verification"
+    ],
+    "architecture": [
+      "concept-to-code-bridge",
+      "narrsistic-pluto",
+      "codebase-design",
+      "cs-domain-learning",
+      "testing-verification"
+    ],
+    "ui": [
+      "concept-to-code-bridge",
+      "codebase-design",
+      "cs-domain-learning",
+      "hci-usability-principles",
+      "picasso",
+      "escher",
+      "vermeer",
+      "testing-verification"
+    ],
+    "algorithm": [
+      "concept-to-code-bridge",
+      "codebase-design",
+      "cs-domain-learning",
+      "testing-verification"
+    ],
+    "concurrency": [
+      "concept-to-code-bridge",
+      "codebase-design",
+      "cs-domain-learning",
+      "testing-verification"
+    ],
+    "persistence": [
+      "concept-to-code-bridge",
+      "codebase-design",
+      "cs-domain-learning",
+      "testing-verification"
+    ],
+    "search": [
+      "concept-to-code-bridge",
+      "codebase-design",
+      "cs-domain-learning",
+      "testing-verification"
+    ],
+    "security-protocol": [
+      "concept-to-code-bridge",
+      "codebase-design",
+      "cs-domain-learning",
+      "testing-verification"
+    ],
+    "networking": [
+      "concept-to-code-bridge",
+      "codebase-design",
+      "cs-domain-learning",
+      "testing-verification"
+    ],
+    "performance": [
+      "concept-to-code-bridge",
+      "codebase-design",
+      "cs-domain-learning",
+      "testing-verification"
+    ],
+    "brand-system": [
+      "brandkit",
+      "cs-domain-learning",
+      "picasso",
+      "testing-verification"
+    ],
+    "web-marketing-ui": [
+      "concept-to-code-bridge",
+      "codebase-design",
+      "cs-domain-learning",
+      "design-taste-frontend",
+      "imagegen-frontend-web",
+      "image-to-code",
+      "picasso",
+      "vermeer",
+      "testing-verification"
+    ],
+    "web-product-ui": [
+      "concept-to-code-bridge",
+      "codebase-design",
+      "cs-domain-learning",
+      "hci-usability-principles",
+      "picasso",
+      "escher",
+      "vermeer",
+      "testing-verification"
+    ],
+    "responsive-mobile-web-ui": [
+      "concept-to-code-bridge",
+      "codebase-design",
+      "cs-domain-learning",
+      "pact-context-analysis",
+      "picasso",
+      "escher",
+      "vermeer",
+      "testing-verification"
+    ],
+    "native-mobile-ui": [
+      "concept-to-code-bridge",
+      "codebase-design",
+      "cs-domain-learning",
+      "imagegen-frontend-mobile",
+      "mobile-app-implementation",
+      "pact-context-analysis",
+      "picasso",
+      "escher",
+      "testing-verification"
+    ],
+    "ui-redesign": [
+      "concept-to-code-bridge",
+      "codebase-design",
+      "cs-domain-learning",
+      "heuristic-evaluation-audit",
+      "redesign-existing-projects",
+      "picasso",
+      "vermeer",
+      "testing-verification"
+    ],
+    "stitch-ui": [
+      "concept-to-code-bridge",
+      "codebase-design",
+      "cs-domain-learning",
+      "stitch-design-taste",
+      "picasso",
+      "testing-verification"
+    ],
+    "ui-audit": [
+      "concept-to-code-bridge",
+      "cs-domain-learning",
+      "heuristic-evaluation-audit",
+      "cognitive-walkthrough-evaluator",
+      "testing-verification"
+    ],
+    "user-research": [
+      "pact-context-analysis",
+      "user-research-thematic-analysis",
+      "persona-scenario-design",
+      "cs-domain-learning",
+      "testing-verification"
+    ],
+    "workflow-optimization": [
+      "concept-to-code-bridge",
+      "codebase-design",
+      "cs-domain-learning",
+      "task-modeling-goms-klm",
+      "testing-verification"
+    ]
+  }
+}

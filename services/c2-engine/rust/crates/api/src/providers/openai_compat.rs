@@ -1214,6 +1214,7 @@ mod tests {
             }]),
             tool_choice: Some(ToolChoice::Auto),
             stream: false,
+            temperature: None,
         });
 
         assert_eq!(payload["messages"][0]["role"], json!("system"));
@@ -1243,6 +1244,7 @@ mod tests {
             tools: None,
             tool_choice: None,
             stream: false,
+            temperature: None,
         });
 
         assert_eq!(

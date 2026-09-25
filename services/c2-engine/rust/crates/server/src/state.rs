@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -12,6 +11,7 @@ use runtime::{ConversationMessage, Session as RuntimeSession};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value as JsonValue};
 use tokio::sync::{broadcast, mpsc, Mutex, RwLock};
+use uuid::Uuid;
 
 pub type SessionId = String;
 pub type SessionStore = Arc<RwLock<HashMap<SessionId, Session>>>;
@@ -76,6 +76,28 @@ pub enum TaskResultType {
     Generation,
     Explanation,
     Error,
+}
+
+impl TaskStatus {
+    pub(crate) const fn as_str(self) -> &'static str {
+        match self {
+            Self::Queued => "queued",
+            Self::Running => "running",
+            Self::Completed => "completed",
+            Self::Failed => "failed",
+        }
+    }
+}
+
+impl TaskResultType {
+    pub(crate) const fn as_str(self) -> &'static str {
+        match self {
+            Self::Clarification => "clarification",
+            Self::Generation => "generation",
+            Self::Explanation => "explanation",
+            Self::Error => "error",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -144,8 +166,6 @@ impl TurnTask {
 pub struct AppState {
     pub sessions: SessionStore,
     pub tasks: TaskStore,
-    next_session_id: Arc<AtomicU64>,
-    next_task_id: Arc<AtomicU64>,
     turn_locks: Arc<RwLock<HashMap<SessionId, Arc<Mutex<()>>>>>,
     clarification_rounds: Arc<RwLock<HashMap<SessionId, u64>>>,
     pub(crate) turn_tx: mpsc::UnboundedSender<TurnRequest>,
@@ -171,8 +191,6 @@ impl AppState {
             Self {
                 sessions: Arc::new(RwLock::new(HashMap::new())),
                 tasks: Arc::new(RwLock::new(HashMap::new())),
-                next_session_id: Arc::new(AtomicU64::new(1)),
-                next_task_id: Arc::new(AtomicU64::new(1)),
                 turn_locks: Arc::new(RwLock::new(HashMap::new())),
                 clarification_rounds: Arc::new(RwLock::new(HashMap::new())),
                 turn_tx,
@@ -185,13 +203,35 @@ impl AppState {
     }
 
     pub(crate) fn allocate_session_id(&self) -> SessionId {
-        let id = self.next_session_id.fetch_add(1, Ordering::Relaxed);
-        format!("session-{id}")
+        allocate_entity_id()
     }
 
     pub(crate) fn allocate_task_id(&self) -> TaskId {
-        let id = self.next_task_id.fetch_add(1, Ordering::Relaxed);
-        format!("task-{id}")
+        allocate_entity_id()
+    }
+
+    /// Return the live in-memory session, rehydrating it from PostgreSQL when
+    /// this process has not seen it yet (e.g. after a restart). Double-checked
+    /// insertion mirrors `turn_lock_for`; `None` means the ID exists nowhere.
+    pub async fn live_session(&self, session_id: &str) -> Option<Session> {
+        if let Some(session) = self.sessions.read().await.get(session_id) {
+            return Some(session.clone());
+        }
+        let pool = self.pool.as_ref()?;
+        let row = match crate::persistence::load_session(pool, session_id).await {
+            Ok(Some(row)) => row,
+            Ok(None) => return None,
+            Err(error) => {
+                tracing::error!(session_id = %session_id, error = %error, "failed to load session from database");
+                return None;
+            }
+        };
+        let mut sessions = self.sessions.write().await;
+        let session = sessions
+            .entry(session_id.to_string())
+            .or_insert_with(|| Session::rehydrated(session_id.to_string(), row.created_at, row.conversation))
+            .clone();
+        Some(session)
     }
 
     pub async fn turn_lock_for(&self, session_id: &str) -> Arc<Mutex<()>> {
@@ -210,6 +250,11 @@ impl AppState {
         if let Some(task) = self.tasks.write().await.get_mut(task_id) {
             task.mark_running();
         }
+        if let Some(pool) = &self.pool {
+            if let Err(error) = crate::persistence::mark_task_running(pool, task_id).await {
+                tracing::error!(task_id = %task_id, error = %error, "failed to persist task running state");
+            }
+        }
     }
 
     pub async fn complete_task(
@@ -219,13 +264,23 @@ impl AppState {
         payload: JsonValue,
     ) {
         if let Some(task) = self.tasks.write().await.get_mut(task_id) {
-            task.complete(result_type, payload);
+            task.complete(result_type, payload.clone());
+        }
+        if let Some(pool) = &self.pool {
+            if let Err(error) = crate::persistence::complete_task(pool, task_id, result_type, &payload).await {
+                tracing::error!(task_id = %task_id, error = %error, "failed to persist task completion");
+            }
         }
     }
 
     pub async fn fail_task(&self, task_id: &str, error: String) {
         if let Some(task) = self.tasks.write().await.get_mut(task_id) {
-            task.fail(error);
+            task.fail(error.clone());
+        }
+        if let Some(pool) = &self.pool {
+            if let Err(db_error) = crate::persistence::fail_task(pool, task_id, &error).await {
+                tracing::error!(task_id = %task_id, error = %db_error, "failed to persist task failure");
+            }
         }
     }
 
@@ -264,6 +319,14 @@ impl Session {
             conversation: RuntimeSession::new(),
             events,
         }
+    }
+
+    /// Rebuild a live handle from a persisted row: restored identity and
+    /// conversation, plus a fresh broadcast channel (never serialized —
+    /// enforced by the compiler since it isn't `Serialize`).
+    pub(crate) fn rehydrated(id: SessionId, created_at: u64, conversation: RuntimeSession) -> Self {
+        let (events, _) = broadcast::channel(BROADCAST_CAPACITY);
+        Self { id, created_at, conversation, events }
     }
 
     pub(crate) fn subscribe(&self) -> broadcast::Receiver<SessionEvent> {
@@ -516,4 +579,29 @@ pub(crate) fn not_found(message: String) -> ApiError {
         StatusCode::NOT_FOUND,
         Json(ErrorResponse { error: message }),
     )
+}
+
+fn allocate_entity_id() -> String {
+    Uuid::new_v4().to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+
+    use uuid::Uuid;
+
+    use super::allocate_entity_id;
+
+    #[test]
+    fn generated_entity_ids_are_unique_uuid_v4_values() {
+        let ids = (0..128).map(|_| allocate_entity_id()).collect::<Vec<_>>();
+        let unique_ids = ids.iter().collect::<HashSet<_>>();
+
+        assert_eq!(unique_ids.len(), ids.len());
+        for id in ids {
+            let uuid = Uuid::parse_str(&id).expect("generated ID should parse as a UUID");
+            assert_eq!(uuid.get_version_num(), 4);
+        }
+    }
 }

@@ -1,0 +1,36 @@
+{
+  "task_id": "TASK-MOBILE-1",
+  "task_type": "native-mobile-ui",
+  "ui_surface": "native-mobile-ui",
+  "platform": "react-native",
+  "status": "planned",
+  "selected_skills": [
+    "concept-to-code-bridge",
+    "codebase-design",
+    "imagegen-frontend-mobile",
+    "mobile-app-implementation",
+    "picasso",
+    "escher",
+    "testing-verification"
+  ],
+  "required_artifacts": [
+    "ui-brief.md",
+    "mobile-flow.md",
+    "mobile-reference-manifest.json",
+    "mobile-implementation-plan.md",
+    "design.md",
+    "backend-requirements.md",
+    "mobile-ui-verification.md",
+    "verification.md"
+  ],
+  "required_before_edit": [
+    "ui-brief.md",
+    "mobile-flow.md",
+    "mobile-reference-manifest.json",
+    "mobile-implementation-plan.md",
+    "design.md",
+    "backend-requirements.md"
+  ],
+  "files_in_scope": [],
+  "requires_graperoot": false
+}

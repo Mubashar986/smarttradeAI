@@ -177,9 +177,6 @@ async fn load_db_strategy(
     user_id: &str,
     strategy_id: &str,
 ) -> Result<Option<StrategyRecord>, String> {
-    let Ok(strategy_id) = strategy_id.parse::<i64>() else {
-        return Ok(None);
-    };
     let row = sqlx::query(
         r#"
         SELECT
@@ -213,9 +210,6 @@ async fn update_db_strategy(
     strategy_id: &str,
     update: &UpdateStrategyRequest,
 ) -> Result<Option<StrategyRecord>, String> {
-    let Ok(strategy_id) = strategy_id.parse::<i64>() else {
-        return Ok(None);
-    };
     let row = sqlx::query(
         r#"
         UPDATE strategies
@@ -262,9 +256,6 @@ async fn soft_delete_db_strategy(
     user_id: &str,
     strategy_id: &str,
 ) -> Result<Option<DeleteStrategyResponse>, String> {
-    let Ok(strategy_id_num) = strategy_id.parse::<i64>() else {
-        return Ok(None);
-    };
     let row = sqlx::query(
         r#"
         UPDATE strategies
@@ -274,7 +265,7 @@ async fn soft_delete_db_strategy(
         "#,
     )
     .bind(user_id)
-    .bind(strategy_id_num)
+    .bind(strategy_id)
     .fetch_optional(pool)
     .await
     .map_err(|error| error.to_string())?;

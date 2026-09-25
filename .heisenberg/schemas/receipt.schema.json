@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Heisenberg task receipt",
+  "type": "object",
+  "required": ["task_id", "selected_skills", "artifacts", "files_checked", "verification", "created_at"],
+  "properties": {
+    "task_id": {"type": "string"},
+    "selected_skills": {"type": "array", "items": {"type": "string"}},
+    "artifacts": {"type": "array", "items": {"type": "string"}},
+    "files_checked": {"type": "array", "items": {"type": "string"}},
+    "verification": {"type": "array", "items": {"type": "string"}},
+    "created_at": {"type": "string"}
+  },
+  "additionalProperties": true
+}

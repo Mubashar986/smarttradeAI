@@ -1007,15 +1007,16 @@ async fn persist_strategy_postgres(
     request: &SaveStrategyRequest,
     pool: &sqlx::PgPool,
 ) -> Result<String, String> {
-    let strategy_id: i32 = sqlx::query_scalar(
+    let strategy_id = Uuid::new_v4().to_string();
+    sqlx::query(
         r#"
         INSERT INTO strategies
-            (name, code, explanation, status, session_id, user_id, pair, timeframe, created_at, updated_at)
+            (id, name, code, explanation, status, session_id, user_id, pair, timeframe, created_at, updated_at)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-        RETURNING id
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
         "#,
     )
+    .bind(&strategy_id)
     .bind(&request.strategy_name)
     .bind(&request.code)
     .bind(&request.explanation)
@@ -1024,10 +1025,10 @@ async fn persist_strategy_postgres(
     .bind(&request.user_id)
     .bind(&request.pair)
     .bind(&request.timeframe)
-    .fetch_one(pool)
+    .execute(pool)
     .await
     .map_err(|error| error.to_string())?;
-    Ok(strategy_id.to_string())
+    Ok(strategy_id)
 }
 
 fn persist_strategy_local(
@@ -1045,7 +1046,7 @@ fn persist_strategy_local(
         };
     }
 
-    let strategy_id = format!("local-{}", Uuid::new_v4());
+    let strategy_id = Uuid::new_v4().to_string();
     let timestamp = current_timestamp_slug();
     let sanitized_name = sanitize_file_stem(&request.strategy_name);
     let file_path = strategies_dir.join(format!("{sanitized_name}_{timestamp}.mq5"));
@@ -1570,6 +1571,7 @@ mod tests {
     use serde_json::json;
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
+    use uuid::Uuid;
 
     fn temp_dir() -> std::path::PathBuf {
         let nanos = SystemTime::now()
@@ -1829,6 +1831,13 @@ mod tests {
 
         assert!(result.success);
         assert_eq!(result.storage, "local_file");
+        assert!(Uuid::parse_str(
+            result
+                .strategy_id
+                .as_deref()
+                .expect("local save should return a strategy ID")
+        )
+        .is_ok());
         let file_path = result
             .file_path
             .as_ref()

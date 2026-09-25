@@ -1,0 +1,21 @@
+{
+  "task_id": "TASK-1.1",
+  "task_type": "feature",
+  "status": "planned",
+  "selected_skills": [
+    "concept-to-code-bridge",
+    "codebase-design",
+    "testing-verification"
+  ],
+  "required_artifacts": [
+    "understanding.md",
+    "design.md",
+    "verification.md"
+  ],
+  "required_before_edit": [
+    "understanding.md",
+    "design.md"
+  ],
+  "files_in_scope": [],
+  "requires_graperoot": false
+}
