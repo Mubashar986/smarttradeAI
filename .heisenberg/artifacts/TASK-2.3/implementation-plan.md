@@ -1,7 +1,7 @@
 # Task 2.3 — Persistent Session & Task Management: Implementation Plan
 
 > Stage: 3 — Implementation Planning
-> Inputs: [task_2_3_understanding.md](C:/Users/Abdul%20Jabbar%20Metlo/Desktop/smarttradeAI/designdocs/task_2_3_understanding.md), [task_2_3_design.md](C:/Users/Abdul%20Jabbar%20Metlo/Desktop/smarttradeAI/designdocs/task_2_3_design.md)
+> Inputs: [understanding.md](understanding.md), [design.md](design.md)
 > RequestFeedback = true
 
 ## 1. Change Summary Card

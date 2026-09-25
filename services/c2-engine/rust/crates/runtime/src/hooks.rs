@@ -483,13 +483,13 @@ mod tests {
     fn rerunning_static_analysis_clears_previous_compile_gate() {
         let runner = HookRunner::default();
 
-        runner.run_post_tool_use(
+        let _ = runner.run_post_tool_use(
             "run_static_analysis",
             r#"{"session_id":"sess-1"}"#,
             r#"{"passed":true}"#,
             false,
         );
-        runner.run_post_tool_use(
+        let _ = runner.run_post_tool_use(
             "compile_mql5",
             r#"{"session_id":"sess-1"}"#,
             r#"{"success":true}"#,
@@ -499,7 +499,7 @@ mod tests {
             .run_pre_tool_use("save_strategy", r#"{"session_id":"sess-1"}"#)
             .is_denied());
 
-        runner.run_post_tool_use(
+        let _ = runner.run_post_tool_use(
             "run_static_analysis",
             r#"{"session_id":"sess-1"}"#,
             r#"{"passed":true}"#,

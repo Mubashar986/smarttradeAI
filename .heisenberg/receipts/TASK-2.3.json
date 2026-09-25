@@ -1,0 +1,47 @@
+{
+  "task_id": "TASK-2.3",
+  "selected_skills": [
+    "concept-to-code-bridge",
+    "codebase-design",
+    "cs-domain-learning",
+    "testing-verification"
+  ],
+  "selected_skill_sources": [
+    { "id": "concept-to-code-bridge", "path": ".opencode/skills/concept-to-code-bridge/SKILL.md" },
+    { "id": "codebase-design", "path": ".opencode/skills/codebase-design/SKILL.md" },
+    { "id": "cs-domain-learning", "path": ".opencode/skills/cs-domain-learning/SKILL.md" },
+    { "id": "testing-verification", "path": ".opencode/skills/testing-verification/SKILL.md" }
+  ],
+  "artifacts": [
+    ".heisenberg/artifacts/TASK-2.3/understanding.md",
+    ".heisenberg/artifacts/TASK-2.3/design.md",
+    ".heisenberg/artifacts/TASK-2.3/cs-concepts.md",
+    ".heisenberg/artifacts/TASK-2.3/implementation-plan.md",
+    ".heisenberg/artifacts/TASK-2.3/verification.md"
+  ],
+  "files_checked": [
+    "services/c2-engine/rust/crates/server/src/persistence.rs",
+    "services/c2-engine/rust/crates/server/src/state.rs",
+    "services/c2-engine/rust/crates/server/src/lib.rs",
+    "services/c2-engine/rust/crates/server/src/routes/sessions.rs",
+    "services/c2-engine/rust/crates/server/src/routes/turns.rs",
+    "services/c2-engine/rust/crates/c2-engine/src/main.rs",
+    "services/c2-engine/rust/crates/api/src/providers/claw_provider.rs",
+    "services/c2-engine/rust/crates/api/src/providers/openai_compat.rs",
+    "services/c2-engine/rust/crates/runtime/src/hooks.rs"
+  ],
+  "verification": [
+    "B5 drift check PASS: all 6 implementation-plan steps present in code (4 documented deviations: D1 sqlx Error::Encode -> Protocol compile fix; D2 user_id omitted pending Phase 4.1 FK population; D3/D4 cosmetic)",
+    "cargo check --workspace --all-targets: PASSED (0 errors) - Docker rust-dev container",
+    "cargo clippy --workspace --all-targets -- -D warnings: PASSED (0 errors)",
+    "cargo test: api crate 13/13 passed; 19 pre-existing brownfield failures in server/runtime (missing git binary, MQL4 fence edge cases, TestServer turn_rx) - not task 2.3 regressions, pool=None contract intact, no pre-existing test modified",
+    "Live persistence: session + task rows durable in PostgreSQL after POST (Docker smoke)",
+    "Restart survival: session rehydration via live_session (200), task status via DB fallback, list_sessions DB-backed - all after docker compose restart",
+    "Boot reconcile: queued/running zombies -> failed with 'interrupted by server restart'",
+    "Failure path: unknown session -> 404 with 0 DB rows (accept-path rollback)",
+    "Test-target compile fixes: temperature: None x3 (claw_provider, openai_compat x2); let _ = run_post_tool_use x3 (hooks.rs) - test code only, zero production edits"
+  ],
+  "evidence_mode": "Static reads + Docker dev-container execution; GrapeRoot graph = UNKNOWN (no workspace index); no tests executed by agent pre-handoff (Zero Terminal Testing Policy)",
+  "human_signoff": "Law 7 design sign-off accepted by user 2026-09-25; Stage 4 QA report: VERIFIED & FUNCTIONAL",
+  "created_at": "2026-09-25"
+}

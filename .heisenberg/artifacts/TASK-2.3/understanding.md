@@ -3,7 +3,7 @@
 > Stage: 1 — Conceptual Understanding
 > Scope: sessions, turn tasks, conversation history, boot-time recovery
 > Artifact status: complete with Mermaid fallback visuals
-> Image generation status: raster generation is unavailable in this environment (same HTTP 403 limitation recorded in `task_2_3`'s predecessor, [task_2_2_understanding.md](C:/Users/Abdul%20Jabbar%20Metlo/Desktop/smarttradeAI/designdocs/task_2_2_understanding.md:6)). No generated image is claimed below; the Mermaid diagrams in Sections 1, 5, and 6 are the verified visual fallback.
+> Image generation status: raster generation is unavailable in this environment (same HTTP 403 limitation recorded in `task_2_3`'s predecessor, [task_2_2_understanding.md](../../../designdocs/task_2_2_understanding.md:6)). No generated image is claimed below; the Mermaid diagrams in Sections 1, 5, and 6 are the verified visual fallback.
 
 ## 1. Visual Architecture
 

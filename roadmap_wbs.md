@@ -13,7 +13,8 @@
 - **Date / author:** 2026-09-25, Heisenberg Stage 0 (agent-assisted, user-directed).
 - **Target outcome:** Deployed end-to-end MVP (backend + React UI + AWS with Windows
   MetaEditor sidecar), including supervised paper-trading and a full auth system.
-- **Active leaf task at time of writing:** `Task 2.3 — Persistent Session & Task Management`.
+- **Active leaf task at time of writing:** `Task 2.3 — Persistent Session & Task Management`
+  *(completed 2026-09-25; next leaf: Task 2.4 — Audit logging pipeline)*.
 
 ## 2. User Answers and Assumptions
 
@@ -161,8 +162,10 @@ Status key: `[COMPLETED]` `[ACTIVE]` `[BLOCKED]` `[READY]` `[BACKLOG]`
 
 - **2.1** `[COMPLETED]` Schema: users/sessions/tasks/strategies/audit tables (`init.sql`, migration 0001)
 - **2.2** `[COMPLETED]` Secure entity identifiers — UUID v4 rotation (migration 0002 + artifacts)
-- **2.3** `[ACTIVE]` **Persistent session & task management** — persist on enqueue/update,
-  DB fallback reads, boot reconcile, conversation hydration. *Code written; Stage 4 pending.*
+- **2.3** `[COMPLETED]` **Persistent session & task management** — persist on enqueue/update,
+  DB fallback reads, boot reconcile, conversation hydration.
+  *Stage 4 QA verified 2026-09-25: check/clippy green, live persistence, restart survival,
+  reconcile; receipt `.heisenberg/receipts/TASK-2.3.json`.*
 - **2.4** `[READY]` Audit logging pipeline — write `audit_logs` + `strategy_audit_log`
   on session/turn/strategy status transitions.
   - AC: every PATCH/DELETE on strategies and every task completion writes an audit row; verified by SQL checks.
@@ -264,10 +267,10 @@ graph TD
 
 | Task | Status | Blocked by | Evidence ready |
 |---|---|---|---|
-| 2.3 | ACTIVE | — (artifacts exist; Stage 4 pending) | understanding/design/implementation plan ✓ |
-| 2.4 | READY | 2.3 | schema ✓ |
-| 8.1 | READY | — (can parallel 2.3 Stage 4) | compose service `rust-dev` ✓ |
-| 3.1 | BACKLOG | 2.3 (clean base) | `users` table ✓, argon2 dep ✓ |
+| 2.3 | COMPLETED | — | all 5 artifacts ✓, receipt ✓, Stage 4 QA ✓ |
+| 2.4 | READY | — (unblocked: 2.3 completed) | schema ✓ |
+| 8.1 | READY | — | compose service `rust-dev` ✓ |
+| 3.1 | BACKLOG | — (2.3 completed, clean base) | `users` table ✓, argon2 dep ✓ |
 | 5.1 | BACKLOG | 3.2 | API contract ✓ |
 | 6.1 | BACKLOG | 4.1 | compile-service reference ✓ |
 | 7.x | BACKLOG | M2+ (auth/quality gates) | docker-compose prod basis ✓ |

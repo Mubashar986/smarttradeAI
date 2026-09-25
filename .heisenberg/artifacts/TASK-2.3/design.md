@@ -1,7 +1,7 @@
 # Task 2.3 — Persistent Session & Task Management: Codebase Design
 
 > Stage: 2 — Codebase Design
-> Input: [task_2_3_understanding.md](C:/Users/Abdul%20Jabbar%20Metlo/Desktop/smarttradeAI/designdocs/task_2_3_understanding.md)
+> Input: [understanding.md](understanding.md)
 > Artifact status: design only — no code written
 > Scope guard: turn-lock distribution (Task 3.1), user-id query scoping (Task 3.2), multi-table transactions (Task 3.3) are explicitly **out of scope**.
 

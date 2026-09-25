@@ -954,6 +954,7 @@ mod tests {
             tools: None,
             tool_choice: None,
             stream: false,
+            temperature: None,
         };
 
         assert!(request.with_streaming().stream);

@@ -1,0 +1,43 @@
+{
+  "task_id": "TASK-2.3",
+  "task_type": "persistence",
+  "status": "complete",
+  "design_signoff": {
+    "law": "LAW-7-HUMAN-DESIGN-SIGNOFF",
+    "signed_by": "user",
+    "signed_at": "2026-09-25",
+    "artifacts": ["understanding.md", "design.md", "cs-concepts.md"]
+  },
+  "selected_skills": [
+    "concept-to-code-bridge",
+    "codebase-design",
+    "cs-domain-learning",
+    "testing-verification"
+  ],
+  "required_artifacts": [
+    "understanding.md",
+    "design.md",
+    "cs-concepts.md",
+    "implementation-plan.md",
+    "verification.md"
+  ],
+  "required_before_edit": [
+    "understanding.md",
+    "design.md",
+    "cs-concepts.md"
+  ],
+  "files_in_scope": [
+    "services/c2-engine/rust/crates/server/src/persistence.rs",
+    "services/c2-engine/rust/crates/server/src/state.rs",
+    "services/c2-engine/rust/crates/server/src/lib.rs",
+    "services/c2-engine/rust/crates/server/src/routes/sessions.rs",
+    "services/c2-engine/rust/crates/server/src/routes/turns.rs",
+    "services/c2-engine/rust/crates/server/src/routes/strategies.rs",
+    "services/c2-engine/rust/crates/c2-engine/src/main.rs",
+    "services/c2-engine/rust/crates/runtime/src/smarttrade_tools.rs",
+    "services/c2-engine/plugins/smarttrade-mql5/db/init.sql",
+    "services/c2-engine/plugins/smarttrade-mql5/db/migrations/0002_secure_entity_ids.sql"
+  ],
+  "requires_graperoot": false,
+  "notes": "Resumed 2026-09-25 after 3-month hiatus. Code written pre-Heisenberg (commit 9399d02); Stage 4 verification outstanding. GrapeRoot graph evidence: UNKNOWN (no workspace index)."
+}
